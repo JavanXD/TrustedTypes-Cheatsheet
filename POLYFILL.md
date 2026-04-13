@@ -15,38 +15,24 @@ description: "W3C Trusted Types polyfill for older browsers: api_only vs full ES
 
 ## Table of contents
 
-**Guides**
-
-- [Native vs polyfill](#poly-native)
-- [Which browsers need the polyfill?](#poly-browsers)
-- [Polyfill variants](#poly-variants)
-- [Load in the browser (ES5 builds)](#poly-es5)
-- [Node.js / bundlers (npm)](#poly-node)
-- [Pairing with application code](#poly-pair)
-- [Building from source (optional)](#poly-build)
-- [Demo and tests](#poly-demo)
-- [When you can skip the polyfill](#poly-skip)
-- [Related in this repo](#poly-related)
-- [Links & resources](#poly-links)
-
-<details>
-<summary><strong>Section map (same links as a table)</strong></summary>
-
-| Section | What you will find |
-|---------|-------------------|
-| [Native vs polyfill](#poly-native) | What the browser does natively vs **`api_only`**, **`full`**, and **tinyfill** |
-| [Which browsers need the polyfill?](#poly-browsers) | When you can omit the script vs when you still need a shim |
-| [Polyfill variants](#poly-variants) | **`api_only`**, **`full`**, **tinyfill** — trade-offs and intent |
-| [Load in the browser (ES5 builds)](#poly-es5) | CDN `<script>` tags for **api_only** and **full** |
-| [Node.js / bundlers (npm)](#poly-node) | `npm install`, CommonJS / ESM notes |
-| [Pairing with application code](#poly-pair) | Feature-detect pattern, DOMPurify + trusted output |
-| [Building from source (optional)](#poly-build) | Clone upstream repo, `npm run build` |
-| [Demo and tests](#poly-demo) | Hosted demo and platform-test paths |
-| [When you can skip the polyfill](#poly-skip) | Matrix-only-native support |
-| [Related in this repo](#poly-related) | Pointer to **`README.md`** |
-| [Links & resources](#poly-links) | MDN, GitHub, npm, web.dev, CDN URLs |
-
-</details>
+- [Native vs polyfill](#poly-native) — what the browser does natively vs **`api_only`**, **`full`**, and **tinyfill**
+- [Which browsers need the polyfill?](#poly-browsers) — when you can omit the script vs when you still need a shim
+- [Polyfill variants](#poly-variants) — trade-offs and intent
+  - [1. `api_only` (light)](#poly-variant-api-only)
+  - [2. `full`](#poly-variant-full)
+  - [3. Tinyfill (minimal shim)](#poly-variant-tinyfill)
+- [Load in the browser (ES5 builds)](#poly-es5) — CDN `<script>` tags for **api_only** and **full**
+  - [API only](#poly-es5-api-only)
+  - [Full (with inferred / inline CSP hint)](#poly-es5-full)
+- [Node.js / bundlers (npm)](#poly-node) — `npm install`, CommonJS / ESM notes
+- [Pairing with application code](#poly-pair) — feature-detect pattern, DOMPurify + trusted output
+  - [Feature test (same as without polyfill)](#poly-pair-feature-test)
+  - [DOMPurify + Trusted Types](#poly-pair-dompurify)
+- [Building from source (optional)](#poly-build) — clone upstream repo, `npm run build`
+- [Demo and tests](#poly-demo) — hosted demo and platform-test paths
+- [When you can skip the polyfill](#poly-skip) — native-only support matrix
+- [Related in this repo](#poly-related) — **`README.md`**, **`playground/`**
+- [Links & resources](#poly-links) — MDN, GitHub, npm, web.dev, CDN URLs
 
 ---
 
@@ -91,6 +77,8 @@ Trusted Types is **part of the interoperable web platform** in **current** Chrom
 
 ## Polyfill variants
 
+<a id="poly-variant-api-only"></a>
+
 ### 1. `api_only` (light)
 
 - Defines the **Trusted Types API** so you can call `createPolicy` and use policy methods.
@@ -101,6 +89,8 @@ Trusted Types is **part of the interoperable web platform** in **current** Chrom
 > [!TIP]
 > Use **`api_only`** when you only need **API compatibility** and you rely on **your own sanitization** everywhere, or when native enforcement covers your supported modern browsers and you only need a shim elsewhere.
 
+<a id="poly-variant-full"></a>
+
 ### 2. `full`
 
 - Includes **api_only** behavior plus attempts **type enforcement in the DOM** based on a **CSP policy inferred** from the document (implementation: [`src/polyfill/full.js`](https://github.com/w3c/trusted-types/blob/main/src/polyfill/full.js)).
@@ -108,6 +98,8 @@ Trusted Types is **part of the interoperable web platform** in **current** Chrom
 
 > [!NOTE]
 > Use **`full`** when you must approximate enforcement in environments without native TT. Behavior is **not identical** to native CSP—read upstream code and test your scenarios.
+
+<a id="poly-variant-tinyfill"></a>
 
 ### 3. Tinyfill (minimal shim)
 
@@ -149,6 +141,8 @@ if (typeof trustedTypes === "undefined") {
 > [!NOTE]
 > Compiled files live in the upstream repo’s **`dist/`** directory. The ES5 CDN script URLs below match the [published `webappsec-trusted-types` ES5 builds](https://w3c.github.io/webappsec-trusted-types/dist/es5/trustedtypes.api_only.build.js). If a URL **404s**, confirm paths in the [upstream **`dist/`** tree](https://github.com/w3c/trusted-types/tree/main/dist) or the [package README](https://github.com/w3c/trusted-types/blob/main/README.md).
 
+<a id="poly-es5-api-only"></a>
+
 ### API only
 
 ```html
@@ -164,6 +158,8 @@ if (typeof trustedTypes === "undefined") {
 
 > [!WARNING]
 > The second `innerHTML` assignment uses a **raw string** on purpose: with **`api_only`**, that line is **not** blocked—only native CSP enforcement does that.
+
+<a id="poly-es5-full"></a>
 
 ### Full (with inferred / inline CSP hint)
 
@@ -219,6 +215,8 @@ tt.createPolicy("myPolicy", {
 > [!TIP]
 > With **`api_only`** or **`tinyfill`**, `createPolicy` exists even when there is no native enforcement—your sanitizer is still the security boundary on legacy engines.
 
+<a id="poly-pair-feature-test"></a>
+
 ### Feature test (same as without polyfill)
 
 ```js
@@ -229,6 +227,8 @@ if (globalThis.trustedTypes?.createPolicy) {
   el.innerHTML = policy.createHTML(userHtml);
 }
 ```
+
+<a id="poly-pair-dompurify"></a>
 
 ### DOMPurify + Trusted Types
 

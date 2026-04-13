@@ -19,36 +19,37 @@ description: "Trusted Types & CSP cheatsheet: policies, TrustedHTML/TrustedScrip
 
 ## Table of contents
 
-**Guides**
-
 - [A. HTTP / CSP](#cat-a) — report-only, enforce, Perfect Types
-- [About `DOMPurify` in examples](#about-sanitizers-in-examples)
-- [B. Policies & `TrustedHTML`](#cat-b)
-- [C. Default policy (migration)](#cat-c)
-- [D. What breaks under enforcement](#cat-d)
-- [E. Safe ways to put HTML on the page](#cat-e)
-- [F. HTML Sanitizer API & Trusted Types](#cat-f)
-- [G. Seeing violations in the browser](#cat-g)
-- [H. Tiny polyfill (old browsers)](#cat-h)
-- [Links & resources](#links-resources) · [`POLYFILL.md`](POLYFILL.md) · [Live demos](https://github.com/JavanXD/TrustedTypes-Cheatsheet/blob/main/playground/README.md)
-
-<details>
-<summary><strong>Section map (same links as a table)</strong></summary>
-
-| Section | What you will find |
-|---------|-------------------|
-| [A. HTTP / CSP](#cat-a) | Example **Content-Security-Policy** headers: try in report-only mode first, then enforce; includes “Perfect Types” |
-| [About `DOMPurify` in examples](#about-sanitizers-in-examples) | Why DOMPurify appears often; native **`setHTML()`** / other sanitizers |
-| [B. Policies & `TrustedHTML`](#cat-b) | The three trusted types, the basic **createPolicy → innerHTML** flow, optional feature-detect, escape-only policy |
-| [C. Default policy (migration)](#cat-c) | The special **`default`** policy name for gradual migration |
-| [D. What breaks under enforcement](#cat-d) | Code that throws; building a `<script>` in a tricky way |
-| [E. Safe ways to put HTML on the page](#cat-e) | **Pick one** approach per place in your code: `setHTML()`, DOM APIs, policy, or DOMPurify |
-| [F. Sanitizer API + Trusted Types](#cat-f) | Safe vs less-safe Sanitizer methods; how that fits together with Trusted Types |
-| [G. Seeing violations in the browser](#cat-g) | Logging CSP / Trusted Types problems |
-| [H. Tiny polyfill (old browsers)](#cat-h) | A few lines so `createPolicy` exists without native support; details in **`POLYFILL.md`** |
-| [Live demos (`playground/`)](https://github.com/JavanXD/TrustedTypes-Cheatsheet/blob/main/playground/README.md) | Split view leads with **A.3** **`setHTML()`** + Perfect Types vs vulnerable **`innerHTML`** / **`eval`**; **A.2** in **policy lab**; **`node playground/serve.mjs`**; **DevTools → Console** for **`log()`** |
-
-</details>
+  - [A.1 Report-only](#a-1-report-only)
+  - [A.2 Enforce + policy names](#a-2-enforce)
+  - [A.3 Perfect Types (`trusted-types 'none'`)](#a-3-perfect-types)
+- [About `DOMPurify` in examples](#about-sanitizers-in-examples) — optional stand-in; native **`setHTML()`** and other sanitizers
+- [B. Policies & `TrustedHTML`](#cat-b) — three types, **createPolicy → innerHTML**, feature-detect, escape-only
+  - [B.1 Three types + minimal example](#b-1-mdn-trusted-types-api)
+  - [B.2 Feature-detect before `createPolicy`](#b-2-register-feature-detect)
+  - [B.3 Escape-only policy](#b-3-escape-only)
+- [C. Default policy (migration)](#cat-c) — the **`default`** policy name for gradual migration
+  - [C.1 Default + DOMPurify](#c-1-default-dompurify)
+  - [C.2 Default that always fails](#c-2-default-fail)
+- [D. What breaks under enforcement](#cat-d) — sinks, **`TypeError`**, **`TrustedScript`**
+  - [D.1 Plain string on `innerHTML`](#d-1-innerhtml-string)
+  - [D.2 DOM-built `<script>`](#d-2-dom-script)
+- [E. Safe ways to put HTML on the page](#cat-e) — pick one pattern per call site
+  - [E.1 `setHTML()`](#e-1-sethtml)
+  - [E.2 DOM APIs (no HTML string)](#e-2-dom-apis)
+  - [E.3 Policy + `innerHTML`](#e-3-policy-innerhtml)
+  - [E.4 DOMPurify → `TrustedHTML`](#e-4-dompurify-trusted-type)
+- [F. HTML Sanitizer API & Trusted Types](#cat-f) — safe vs unsafe methods + TT interplay
+  - [F.1 Safe methods](#f-1-safe-methods)
+  - [F.2 Unsafe methods](#f-2-unsafe-methods)
+  - [F.3 Sanitizer API + Trusted Types](#f-3-sanitizer-plus-trusted-types)
+  - [F.4 `Document.parseHTML()`](#f-4-documentparsehtml)
+  - [F.5 `setHTMLUnsafe`](#f-5-sethtmlunsafe)
+- [G. Seeing violations in the browser](#cat-g) — ReportingObserver / `securitypolicyviolation`
+- [H. Tiny polyfill (old browsers)](#cat-h) — tinyfill; see [`POLYFILL.md`](POLYFILL.md)
+- [Links & resources](#links-resources) — specs, MDN, web.dev, related posts
+  - [Official documentation](#links-official-docs)
+  - [Other files in this repo](#links-other-files) · [`POLYFILL.md`](POLYFILL.md) · [Live demos (`playground/`)](https://github.com/JavanXD/TrustedTypes-Cheatsheet/blob/main/playground/README.md)
 
 ---
 
@@ -59,6 +60,8 @@ description: "Trusted Types & CSP cheatsheet: policies, TrustedHTML/TrustedScrip
 > [!TIP]
 > Start with headers that only **report** problems. When nothing important breaks, switch to headers that **enforce** rules. Always send CSP from your **server** for browsers that support Trusted Types natively.
 
+<a id="a-1-report-only"></a>
+
 ### A.1 Report-only — log issues, do not block yet
 
 The browser records violations (for example string assigned to `innerHTML`) but the page keeps working.
@@ -68,6 +71,8 @@ Content-Security-Policy-Report-Only: require-trusted-types-for 'script'; report-
 ```
 
 If you use the Reporting API, you can use `report-to` instead of `report-uri`. The Trusted Types part is always **`require-trusted-types-for 'script'`**.
+
+<a id="a-2-enforce"></a>
 
 ### A.2 Enforce — and list which policy names you allow
 
@@ -82,6 +87,8 @@ You can add **`report-uri`** (or **`report-to`**) on the enforcing header too, s
 ```http
 Content-Security-Policy: require-trusted-types-for 'script'; trusted-types myPolicy; report-uri https://my-csp-endpoint.example/
 ```
+
+<a id="a-3-perfect-types"></a>
 
 ### A.3 “Perfect Types” — no policies; use the Sanitizer API instead
 
@@ -102,6 +109,8 @@ Worked examples: [E.1 `setHTML()`](#e-1-sethtml) and [F.4 `Document.parseHTML()`
 
 > [!NOTE]
 > Many snippets call **`DOMPurify.sanitize(...)`** because upstream docs use it as a well-known stand-in for “**turn untrusted HTML into something safer before it hits a sink**.” **You do not have to use DOMPurify.**
+
+**Project:** [Trusted Types cheatsheet (GitHub)](https://github.com/JavanXD/TrustedTypes-Cheatsheet) · [Cheatsheet online](https://tt-cheatsheet.javan.de/)
 
 Inside **`createHTML`** (and friends), the body can be **any** approach you trust and can review, for example:
 
@@ -199,6 +208,8 @@ el.innerHTML = escaped;
 
 If you **cannot** change every call site yet (for example third-party code still does `innerHTML = x`), register a policy whose name is exactly **`default`**. The browser may send string assignments through that policy.
 
+<a id="c-1-default-dompurify"></a>
+
 ### C.1 Default policy that runs DOMPurify
 
 ```js
@@ -212,6 +223,8 @@ if (window.trustedTypes && trustedTypes.createPolicy) {
 
 > [!TIP]
 > For **your own** code, prefer a **named** policy at each call site so rules stay easy to find.
+
+<a id="c-2-default-fail"></a>
 
 ### C.2 Default policy that always fails (finds leftover string uses)
 
@@ -236,6 +249,8 @@ trustedTypes.createPolicy("default", {
 > [!NOTE]
 > A **sink** is a browser API that can turn a string into running script or unsafe HTML (for example **`innerHTML`**).
 
+<a id="d-1-innerhtml-string"></a>
+
 ### D.1 Assigning a plain string to `innerHTML`
 
 > [!CAUTION]
@@ -246,6 +261,8 @@ const userInput = "<p>I might be XSS</p>";
 const element = document.querySelector("#container");
 element.innerHTML = userInput; // TypeError when Trusted Types are enforced and no default policy fixes it
 ```
+
+<a id="d-2-dom-script"></a>
 
 ### D.2 Building a `<script>` via DOM nodes (still security-sensitive)
 
@@ -515,6 +532,8 @@ if (typeof trustedTypes === "undefined") {
 
 ## Links & Resources
 
+<a id="links-official-docs"></a>
+
 ### Official documentation
 
 | Topic | Link |
@@ -529,6 +548,8 @@ if (typeof trustedTypes === "undefined") {
 | MDN — `Document.parseHTML()` | [developer.mozilla.org](https://developer.mozilla.org/en-US/docs/Web/API/Document/parseHTML_static) |
 | web.dev — Trusted Types | [web.dev](https://web.dev/articles/trusted-types) |
 | Frederik Braun — Perfect types with `setHTML()` | [frederikbraun.de](https://frederikbraun.de/perfect-types-with-sethtml.html) |
+
+<a id="links-other-files"></a>
 
 ### Other files in this repository
 

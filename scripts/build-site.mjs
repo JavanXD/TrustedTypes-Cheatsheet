@@ -458,13 +458,117 @@ function wrapPage({
     }
     body {
       margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial,
+        sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+      font-size: 16px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
     }
     @media (prefers-color-scheme: dark) {
       .markdown-body {
 ${githubMdLightOverride}
       }
     }
-    .markdown-body { box-sizing: border-box; min-width: 200px; max-width: 980px; margin: 0 auto; padding: 32px 24px 64px; }
+    .markdown-body { box-sizing: border-box; min-width: 200px; padding: 32px 24px 64px; }
+    main.page-shell { box-sizing: border-box; margin: 0 auto; padding: 0 24px 48px; }
+    main.page-shell:not(.has-toc) { max-width: 980px; }
+    main.page-shell:not(.has-toc) .markdown-body { max-width: none; margin: 0; }
+    main.page-shell.has-toc {
+      display: flex;
+      align-items: flex-start;
+      gap: 28px;
+      max-width: 1280px;
+    }
+    main.page-shell.has-toc .markdown-body {
+      flex: 1;
+      min-width: 0;
+      max-width: 980px;
+      margin: 0;
+      padding: 32px 0 64px 0;
+    }
+    .toc-sidebar {
+      flex: 0 0 220px;
+      position: sticky;
+      top: 1rem;
+      align-self: flex-start;
+      max-height: calc(100vh - 2rem);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      margin: 0;
+      padding: 32px 12px 24px 0;
+      border-right: 1px solid var(--color-border-default, #d1d9e0);
+      font-family: inherit;
+      font-size: 0.875rem;
+      line-height: 1.5;
+      font-weight: 400;
+      color: #1f2328;
+    }
+    .toc-sidebar[hidden] { display: none !important; }
+    .toc-sidebar .toc-title {
+      font-size: 0.875rem;
+      font-weight: 600;
+      line-height: 1.25;
+      text-transform: none;
+      letter-spacing: normal;
+      margin: 0 0 0.75rem;
+      color: #1f2328;
+    }
+    .toc-sidebar ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .toc-sidebar li {
+      margin: 0 0 0.25rem;
+    }
+    .toc-sidebar a {
+      display: block;
+      padding: 0.25rem 0 0.25rem 0.625rem;
+      margin-left: -0.625rem;
+      border-radius: 6px;
+      color: #0969da;
+      text-decoration: none;
+      border-left: 2px solid transparent;
+      font-weight: 400;
+    }
+    .toc-sidebar a:hover {
+      color: #0550ae;
+      text-decoration: underline;
+      background: transparent;
+    }
+    .toc-sidebar a.is-active {
+      font-weight: 600;
+      color: #1f2328;
+      text-decoration: none;
+      border-left-color: #0969da;
+      background: rgba(9, 105, 218, 0.06);
+    }
+    .toc-sidebar a.is-active:hover {
+      color: #0550ae;
+    }
+    .toc-sidebar li.toc-depth-3 a {
+      padding-left: 1.125rem;
+      font-size: 0.8125rem;
+      font-weight: 400;
+    }
+    .toc-sidebar li.toc-depth-3 a.is-active {
+      font-weight: 600;
+    }
+    .markdown-body h2, .markdown-body h3 { scroll-margin-top: 1rem; }
+    @media (max-width: 1100px) {
+      main.page-shell.has-toc {
+        display: block;
+        max-width: 980px;
+      }
+      main.page-shell.has-toc .toc-sidebar {
+        display: none !important;
+      }
+      main.page-shell.has-toc .markdown-body {
+        max-width: none;
+        margin: 0;
+        padding: 32px 16px 64px;
+      }
+    }
     .markdown-body > h1:first-of-type { text-align: center; }
     @media (max-width: 767px) { .markdown-body { padding: 16px; } }
     .markdown-body pre code { white-space: pre-wrap; word-break: break-word; }
@@ -502,11 +606,149 @@ ${githubMdLightOverride}
   </style>
 </head>
 <body>
-  <main>
+  <main class="page-shell">
+  <nav class="toc-sidebar" id="toc-nav" aria-label="On this page" hidden></nav>
   <article class="markdown-body">
 ${bodyHtml}
   </article>
   </main>
+  <script>
+  (function () {
+    function initTocScrollSpy() {
+      var shell = document.querySelector("main.page-shell");
+      var article = document.querySelector("main.page-shell .markdown-body");
+      var nav = document.getElementById("toc-nav");
+      if (!shell || !article || !nav) return;
+
+      var headingNodes = article.querySelectorAll("h2, h3");
+      if (headingNodes.length < 2) return;
+
+      function bookmarkAnchorId(block) {
+        if (!block || !block.querySelectorAll) return "";
+        var list = block.querySelectorAll("a[id]");
+        for (var i = 0; i < list.length; i++) {
+          var node = list[i];
+          var href = node.getAttribute("href");
+          if (href === null || href === "" || href === "#") return node.id;
+        }
+        return "";
+      }
+
+      function slugifyHeading(text) {
+        var s = text.replace(/\\s+/g, " ").trim().toLowerCase();
+        s = s.replace(/[^a-z0-9\\s-]/g, "");
+        s = s.replace(/\\s+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+        if (!s) s = "section";
+        return s;
+      }
+
+      var usedIds = Object.create(null);
+      var entries = [];
+      for (var hi = 0; hi < headingNodes.length; hi++) {
+        var h = headingNodes[hi];
+        var linkId = "";
+        var el = h.previousElementSibling;
+        for (var step = 0; step < 16 && el; step++) {
+          if (el.tagName === "A" && el.id) {
+            var hh = el.getAttribute("href");
+            if (hh === null || hh === "" || hh === "#") {
+              linkId = el.id;
+              break;
+            }
+          }
+          var bid = bookmarkAnchorId(el);
+          if (bid) {
+            linkId = bid;
+            break;
+          }
+          el = el.previousElementSibling;
+        }
+        if (!linkId && h.id) linkId = h.id;
+        if (!linkId) {
+          var base = slugifyHeading(h.textContent);
+          linkId = base;
+          var n = 0;
+          while (usedIds[linkId] || document.getElementById(linkId)) {
+            n++;
+            linkId = base + "-" + n;
+          }
+          usedIds[linkId] = true;
+          h.id = linkId;
+        }
+        entries.push({ heading: h, linkId: linkId });
+      }
+
+      var title = document.createElement("p");
+      title.className = "toc-title";
+      title.textContent = "On this page";
+      nav.appendChild(title);
+
+      var ul = document.createElement("ul");
+      var links = [];
+      entries.forEach(function (entry) {
+        var h = entry.heading;
+        var depth = h.tagName === "H3" ? 3 : 2;
+        var li = document.createElement("li");
+        li.className = depth === 3 ? "toc-depth-3" : "toc-depth-2";
+        var a = document.createElement("a");
+        a.href = "#" + entry.linkId;
+        a.textContent = h.textContent.replace(/\\s+/g, " ").trim();
+        a.dataset.targetId = entry.linkId;
+        li.appendChild(a);
+        ul.appendChild(li);
+        links.push(a);
+      });
+      nav.appendChild(ul);
+      nav.hidden = false;
+      shell.classList.add("has-toc");
+
+      function setActive(id) {
+        links.forEach(function (a) {
+          var on = a.dataset.targetId === id;
+          a.classList.toggle("is-active", on);
+          if (on) a.setAttribute("aria-current", "location");
+          else a.removeAttribute("aria-current");
+        });
+      }
+
+      var ticking = false;
+      var lineY = 96;
+
+      function updateActive() {
+        var active = entries[0];
+        for (var i = 0; i < entries.length; i++) {
+          var rect = entries[i].heading.getBoundingClientRect();
+          if (rect.top <= lineY) active = entries[i];
+        }
+        setActive(active.linkId);
+        ticking = false;
+      }
+
+      function onScrollOrResize() {
+        if (!ticking) {
+          ticking = true;
+          requestAnimationFrame(updateActive);
+        }
+      }
+
+      window.addEventListener("scroll", onScrollOrResize, { passive: true });
+      window.addEventListener("resize", onScrollOrResize, { passive: true });
+      updateActive();
+
+      nav.addEventListener("click", function (e) {
+        var t = e.target;
+        if (t.tagName !== "A") return;
+        setTimeout(updateActive, 0);
+      });
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", initTocScrollSpy);
+    } else {
+      initTocScrollSpy();
+    }
+  })();
+  </script>
   <script type="module">
     import mermaid from "${MERMAID_ESM}";
     mermaid.initialize({
