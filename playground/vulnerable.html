@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Vulnerable — no Trusted Types</title>
+  <link rel="stylesheet" href="vulnerable.css" />
+</head>
+<body>
+  <h2>No Trusted Types CSP</h2>
+  <p class="lede">Same patterns as the left column — <strong>intentionally unsafe</strong> after you click run.</p>
+
+  <div class="panel">
+    <h3>1 · HTML sink — <code>innerHTML</code></h3>
+    <textarea id="htmlPayload" rows="2">&lt;img src=x onerror=alert(1)&gt;</textarea>
+    <button type="button" id="runHtml">Run → <code>innerHTML</code> = string</button>
+    <div id="out"></div>
+  </div>
+
+  <div class="panel">
+    <h3>2 · JS sink — <code>eval</code></h3>
+    <textarea id="jsPayload" rows="2">alert('DOM XSS — eval sink')</textarea>
+    <button type="button" id="runEval">Run → <code>eval(string)</code></button>
+  </div>
+
+  <div class="log">
+    <h3>Log</h3>
+    <pre id="log"></pre>
+  </div>
+
+  <script>
+    /*
+     * ---------------------------------------------------------------------------
+     * vulnerable.html — innerHTML + eval like the enforced demos, but NO Trusted Types CSP
+     * ---------------------------------------------------------------------------
+     *
+     * serve.mjs does not send Content-Security-Policy for this file on purpose.
+     * So require-trusted-types-for is off: innerHTML and eval behave like classic
+     * legacy APIs — raw strings are accepted. That is why XSS payloads in the
+     * textarea can execute (e.g. onerror handlers, or code passed to eval).
+     *
+     * Compare with enforced-sanitizer.html in the split view: shared innerHTML + eval demos
+     * (enforced.html also shows setHTML alongside strict innerHTML policy);
+     * different security outcome, entirely because of the response header on the
+     * other document, not because of different application logic here.
+     *
+     * No README § G observers here: without CSP + Trusted Types enforcement there
+     * are no require-trusted-types-for violation reports for those sinks — only
+     * enforced.html / enforced-sanitizer.html load violation-observe.js for that.
+     */
+
+    function log(msg) {
+      console.log("[vulnerable.html]", msg);
+      document.getElementById("log").textContent += msg + "\n";
+    }
+
+    document.getElementById("runHtml").addEventListener("click", () => {
+      const qp = new URLSearchParams(location.search).get("payload");
+      const raw = qp != null && qp !== "" ? qp : document.getElementById("htmlPayload").value;
+      log("innerHTML: assigning raw string…");
+      document.getElementById("out").innerHTML = raw;
+      log("innerHTML: done (script in markup may have run)");
+    });
+
+    document.getElementById("runEval").addEventListener("click", () => {
+      const raw = document.getElementById("jsPayload").value;
+      log("eval: running…");
+      eval(raw);
+      log("eval: returned");
+    });
+  </script>
+</body>
+</html>

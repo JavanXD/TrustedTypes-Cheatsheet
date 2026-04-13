@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Trusted Types playground</title>
+  <link rel="stylesheet" href="index.css" />
+</head>
+<body>
+  <header class="top">
+    <h1>Trusted Types playground</h1>
+    <p class="sub">
+      <strong>Left</strong>: cheatsheet <strong>§ A.3</strong> — Perfect Types (<code>trusted-types 'none'</code>) + native <code>setHTML()</code>; legacy <code>innerHTML</code> / <code>eval</code> blocked (CSP from <code>serve.mjs</code>).
+      <strong>Right</strong>: no Trusted Types CSP — same dangerous sinks run payloads (demo <code>alert</code>).
+      <span class="sub-extra">
+        <a href="policy-lab.html">Policy lab</a>
+        <span class="pill">§ A.3 here · § A.2 in policy lab</span>
+      </span>
+    </p>
+  </header>
+  <p class="hint">
+    Open <strong>Web Developer Tools</strong> → <strong>Console</strong> (e.g. <kbd>F12</kbd> or <kbd>Ctrl+Shift+I</kbd> / <kbd>Cmd+Option+I</kbd>):
+    each iframe mirrors on-page <code>log()</code> as <code>console.log</code> with a <code>[enforced-sanitizer.html]</code> or <code>[vulnerable.html]</code> prefix; expected sink <code>TypeError</code>s on the left use <code>console.debug</code> (show “Verbose” / all levels in Chromium).
+    In <strong>Network</strong>, select the <strong>document</strong> for <code>enforced-sanitizer.html</code> and check <strong>Response headers</strong> for <code>Content-Security-Policy</code> (<code>trusted-types 'none'</code> from <code>serve.mjs</code>); <code>vulnerable.html</code> has no CSP on purpose.
+  </p>
+  <main class="dual">
+    <section class="col">
+      <div class="col-head">§ A.3 — Perfect Types + <code>setHTML()</code></div>
+      <iframe title="Perfect Types and setHTML demo" src="enforced-sanitizer.html"></iframe>
+    </section>
+    <section class="col">
+      <div class="col-head bad">No Trusted Types CSP</div>
+      <iframe title="No Trusted Types (vulnerable)" src="vulnerable.html"></iframe>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Policy lab</title>
+  <link rel="stylesheet" href="policy-lab.css" />
+</head>
+<body>
+  <div class="card">
+    <h1>Policy lab</h1>
+    <p>The <a href="index.html">split view</a> leads with <strong>§ A.3</strong> (<code>enforced-sanitizer.html</code>). This page links the two <strong>enforced</strong> CSP shapes (still <code>node playground/serve.mjs</code>) — cheatsheet <strong>§ A.2</strong> vs <strong>§ A.3</strong>. Open <strong>Web Developer Tools</strong> → <strong>Console</strong> for <code>log()</code> as <code>console.log</code> (filename prefix).</p>
+    <ul>
+      <li>
+        <a href="enforced.html"><strong>enforced.html</strong></a> — <code>trusted-types myPolicy</code> + <code>myPolicy</code>:
+        <code>setHTML()</code> (Sanitizer API) on the same document; <code>createHTML</code> / <code>createScript</code> return <code>null</code> for this lab → <code>innerHTML</code> string and <code>eval</code> <strong>throw</strong>.
+      </li>
+      <li>
+        <a href="enforced-sanitizer.html"><strong>enforced-sanitizer.html</strong></a> — <strong>Perfect Types</strong> (<code>trusted-types 'none'</code>):
+        no <code>createPolicy</code>; safe path is native <code>setHTML()</code> only; <code>innerHTML = string</code> and <code>eval</code> fail.
+      </li>
+    </ul>
+    <p class="back"><a href="index.html">← Back to split iframe demo</a></p>
+  </div>
+</body>
+</html>

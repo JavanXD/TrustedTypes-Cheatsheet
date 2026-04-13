@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Perfect Types + native setHTML</title>
+  <link rel="stylesheet" href="enforced-sanitizer.css" />
+</head>
+<body>
+  <div class="scroll">
+    <h2>Perfect Types — <code>trusted-types 'none'</code></h2>
+    <p class="note">
+      Cheatsheet <strong>§ A.3</strong>: you <strong>cannot</strong> call <code>trustedTypes.createPolicy</code>.
+      Untrusted HTML uses <code>Element.setHTML()</code> (HTML Sanitizer API), not <code>innerHTML = string</code>.
+    </p>
+
+    <div class="panel">
+      <h3>1 · Safe — <code>setHTML()</code></h3>
+      <textarea id="htmlPayload" rows="2">&lt;p&gt;ok&lt;/p&gt;&lt;img src=x onerror=alert(1)&gt;</textarea>
+      <button type="button" id="runSetHTML">Run → <code>out.setHTML(payload)</code></button>
+    </div>
+
+    <div class="panel">
+      <h3>2 · Legacy — <code>innerHTML</code> (expect <code>TypeError</code>)</h3>
+      <button type="button" id="runInnerHTML">Run → <code>out.innerHTML = payload</code></button>
+    </div>
+
+    <div class="panel">
+      <h3>3 · JS sink — <code>eval</code></h3>
+      <textarea id="jsPayload" rows="2">alert('eval sink')</textarea>
+      <button type="button" id="runEval">Run → <code>eval</code></button>
+    </div>
+
+    <div id="out"></div>
+  </div>
+
+  <div class="log">
+    <h3>Console / log</h3>
+    <pre id="log"></pre>
+  </div>
+
+  <script src="violation-observe.js"></script>
+  <script>
+    /*
+     * ---------------------------------------------------------------------------
+     * enforced-sanitizer.html — "Perfect Types" (cheatsheet § A.3 style)
+     * ---------------------------------------------------------------------------
+     *
+     * HTTP Content-Security-Policy from serve.mjs (CSP_PERFECT_TYPES) includes:
+     *   trusted-types 'none'
+     *   require-trusted-types-for 'script'
+     *
+     * Meaning:
+     *   • No application-defined policies: trustedTypes.createPolicy(...) must fail.
+     *   • Untrusted HTML is not meant to go through innerHTML = string; the supported
+     *     path in modern browsers is the HTML Sanitizer API — Element.setHTML(input),
+     *     which parses markup under the browser's baseline sanitizer rules and inserts
+     *     the result without exposing a legacy string sink for that operation.
+     *   • Script sinks like eval(string) still conflict with enforcement when no
+     *     TrustedScript path exists (there are no policies to mint one).
+     *
+     * This file never calls createPolicy for real work — only the startup probe below
+     * demonstrates that registration is blocked by CSP.
+     *
+     * Violation visibility: README.md § G — createPlaygroundViolationAwareLog() in
+     * violation-observe.js (first log() attaches ReportingObserver + DOM listener).
+     */
+
+    const log = createPlaygroundViolationAwareLog("[enforced-sanitizer.html]");
+
+    log(
+      "Demo ready — § G observers attached here (before sinks); createPolicy probe runs next.",
+    );
+
+    // --- Demo 1: preferred path — setHTML (Sanitizer API) ---
+    document.getElementById("runSetHTML").addEventListener("click", () => {
+      const raw = document.getElementById("htmlPayload").value;
+      const out = document.getElementById("out");
+      try {
+        if (typeof out.setHTML !== "function") {
+          log("setHTML: not supported in this browser — need HTML Sanitizer API");
+          return;
+        }
+        out.replaceChildren();
+        // setHTML runs the payload through the sanitizer; dangerous patterns are dropped
+        // or neutralized per browser rules — unlike assigning the same string to innerHTML.
+        out.setHTML(raw);
+        log("setHTML: completed (markup was parsed under browser sanitizer rules)");
+      } catch (e) {
+        log("setHTML: " + e.name + " — " + e.message);
+      }
+    });
+
+    // --- Demo 2: legacy string sink — should fail under Perfect Types + enforcement ---
+    document.getElementById("runInnerHTML").addEventListener("click", () => {
+      const raw = document.getElementById("htmlPayload").value;
+      const out = document.getElementById("out");
+      setPlaygroundSinkContext(out, "innerHTML");
+      try {
+        // With trusted-types 'none', there is no policy to vouch for this string as TrustedHTML.
+        out.innerHTML = raw;
+        log("innerHTML: succeeded (unexpected under Perfect Types)");
+      } catch (e) {
+        console.debug("[enforced-sanitizer.html] innerHTML rejected (expected):", e.name, e.message);
+      }
+    });
+
+    // --- Demo 3: eval — still a string script sink; expect failure ---
+    document.getElementById("runEval").addEventListener("click", () => {
+      const raw = document.getElementById("jsPayload").value;
+      setPlaygroundSinkContext(
+        "eval(string); trigger=" + describeElementBrief(document.getElementById("runEval")),
+      );
+      try {
+        eval(raw);
+        log("eval: completed");
+      } catch (e) {
+        console.debug("[enforced-sanitizer.html] eval rejected (expected):", e.name, e.message);
+      }
+    });
+
+    /*
+     * Startup check: under trusted-types 'none', createPolicy must throw (e.g. TypeError).
+     * Runs once when the page loads — look for the log line before clicking anything.
+     */
+    try {
+      trustedTypes.createPolicy("should-fail", { createHTML: () => null });
+      log("unexpected: createPolicy succeeded (CSP should forbid policies)");
+    } catch (e) {
+      log("createPolicy (expected failure): " + e.name);
+    }
+  </script>
+</body>
+</html>

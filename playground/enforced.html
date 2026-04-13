@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Enforced — Trusted Types</title>
+  <link rel="stylesheet" href="enforced.css" />
+</head>
+<body>
+  <h2>Trusted Types on</h2>
+  <p class="lede">
+    <code>serve.mjs</code> — cheatsheet <strong>§ A.2</strong>:
+    <code>require-trusted-types-for 'script'</code> + <code>trusted-types myPolicy</code>.
+    Same document shows <strong><code>setHTML()</code></strong> (browser sanitizer path) next to a strict <code>createHTML</code> for legacy <strong><code>innerHTML = string</code></strong> — you can add safe HTML APIs without “turning off” the rest of the page.
+  </p>
+
+  <div class="panel">
+    <h3>HTML payload (for <code>setHTML</code> / <code>innerHTML</code>)</h3>
+    <textarea id="htmlPayload" rows="2">&lt;p&gt;ok&lt;/p&gt;&lt;img src=x onerror=alert(1)&gt;</textarea>
+  </div>
+
+  <div class="panel">
+    <h3>1 · Safe — <code>setHtmlOut.setHTML(payload)</code></h3>
+    <button type="button" id="runSetHTML">Run → <code>setHTML</code> (HTML Sanitizer API)</button>
+    <p class="sink-caption">Rendered here</p>
+    <div id="setHtmlOut" class="sink-out"></div>
+  </div>
+
+  <div class="panel">
+    <h3>2 · Legacy — <code>innerHTML</code> = string</h3>
+    <button type="button" id="runHtml">Run → <code>innerHTML</code> = string</button>
+    <p class="sink-caption">Target element (lab policy rejects raw string)</p>
+    <div id="innerHtmlOut" class="sink-out"></div>
+  </div>
+
+  <div class="panel">
+    <h3>3 · JS sink — <code>eval</code></h3>
+    <textarea id="jsPayload" rows="2">alert('DOM XSS — eval sink')</textarea>
+    <button type="button" id="runEval">Run → <code>eval(string)</code></button>
+  </div>
+
+  <div class="log">
+    <h3>Console / log</h3>
+    <pre id="log"></pre>
+  </div>
+
+  <script src="violation-observe.js"></script>
+  <script>
+    /*
+     * ---------------------------------------------------------------------------
+     * enforced.html — Trusted Types "named policy" demo (cheatsheet § A.2 style)
+     * ---------------------------------------------------------------------------
+     *
+     * Trusted Types does NOT mean “block your whole UI.” Typical patterns:
+     *   • Let legacy string sinks (innerHTML, …) go through createHTML / createScript and
+     *     return real TrustedHTML / TrustedScript from *your* sanitizer or rules.
+     *   • Additive path: use Element.setHTML() for untrusted markup — the browser’s
+     *     sanitizer pipeline — alongside existing code while you migrate.
+     *
+     * This lab uses an extreme teaching choice: createHTML / createScript always return
+     * null so every innerHTML = string and eval(string) attempt fails loudly. That is
+     * not how production policies must behave; it only isolates “legacy string sink”
+     * failure. setHTML() below still runs under the same CSP + policy name.
+     *
+     * Violation visibility: README.md § G — bootstrap log() after createPolicy attaches
+     * observers before sinks. TypeErrors from innerHTML / eval use console.debug only.
+     */
+
+    const log = createPlaygroundViolationAwareLog("[enforced.html]");
+
+    trustedTypes.createPolicy("myPolicy", {
+      /**
+       * Legacy innerHTML = string asks the policy to mint TrustedHTML. Returning null
+       * rejects (TypeError). A real policy usually sanitizes `input` and returns trusted
+       * output instead of null for every string.
+       */
+      createHTML() {
+        log("myPolicy createHTML: lab rejects string (return null)");
+        return null;
+      },
+      /**
+       * eval(string) needs TrustedScript from createScript; null rejects.
+       */
+      createScript() {
+        log("myPolicy createScript: lab rejects string (return null)");
+        return null;
+      },
+    });
+
+    log("Demo ready — try setHTML first, then innerHTML / eval; policy + § G in log.");
+
+    document.getElementById("runSetHTML").addEventListener("click", () => {
+      const raw = document.getElementById("htmlPayload").value;
+      const out = document.getElementById("setHtmlOut");
+      try {
+        if (typeof out.setHTML !== "function") {
+          log("setHTML: not supported in this browser — need HTML Sanitizer API");
+          return;
+        }
+        setPlaygroundSinkContext(out, "setHTML");
+        out.replaceChildren();
+        out.setHTML(raw);
+        log("setHTML: completed (browser baseline sanitizer; coexists with strict createHTML for innerHTML)");
+      } catch (e) {
+        log("setHTML: " + e.name + " — " + e.message);
+      }
+    });
+
+    document.getElementById("runHtml").addEventListener("click", () => {
+      const qp = new URLSearchParams(location.search).get("payload");
+      const raw = qp != null && qp !== "" ? qp : document.getElementById("htmlPayload").value;
+      const out = document.getElementById("innerHtmlOut");
+      setPlaygroundSinkContext(out, "innerHTML");
+      try {
+        out.innerHTML = raw;
+        log("innerHTML: assignment succeeded (unexpected)");
+      } catch (e) {
+        console.debug("[enforced.html] innerHTML rejected (expected):", e.name, e.message);
+      }
+    });
+
+    document.getElementById("runEval").addEventListener("click", () => {
+      const raw = document.getElementById("jsPayload").value;
+      const runBtn = document.getElementById("runEval");
+      setPlaygroundSinkContext("eval(string); trigger=" + describeElementBrief(runBtn));
+      try {
+        eval(raw);
+        log("eval: completed (unexpected if policy blocked)");
+      } catch (e) {
+        console.debug("[enforced.html] eval rejected (expected):", e.name, e.message);
+      }
+    });
+  </script>
+</body>
+</html>
