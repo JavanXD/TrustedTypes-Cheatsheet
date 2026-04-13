@@ -1,3 +1,6 @@
+# Requires: Settings → Pages → Build and deployment → Source: GitHub Actions
+# (One-time; or POST /repos/{owner}/{repo}/pages with {"build_type":"workflow"}.)
+
 name: Deploy GitHub Pages
 
 on:
@@ -18,23 +21,26 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: "22"
           cache: npm
       - run: npm ci
       - run: npm run build:site
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: site
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
