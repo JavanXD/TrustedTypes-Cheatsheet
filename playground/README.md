@@ -1,4 +1,4 @@
-# Trusted Types playground
+# Trusted Types - Playground
 
 Local **DOM XSS** vs **Trusted Types** demos aligned with the main cheatsheet (**`README.md` § A.2**, **§ A.3**, **§ B**, **§ E.1**): no third-party sanitizers — the **split view** leads with **§ A.3** (**Perfect Types** + **`Element.setHTML()`**); **§ A.2** named policy is one click away in **`policy-lab.html`**.
 
@@ -37,7 +37,8 @@ For a frontend developer, the important detail is **which document** is governed
 | **`frames/enforced-sanitizer.html`** | **§ A.3** Perfect Types: `trusted-types 'none'` — **`setHTML()`** for safe insert; **`innerHTML`** / **`eval`** blocked; **`createPolicy`** fails by design |
 | **`frames/vulnerable.html`** | No TT CSP — payloads run after **Run** (demo **`alert`**) |
 | **`policy-lab.html`** | Links **A.2** vs **A.3** demos |
-| **`index.css`**, **`enforced.css`**, **`vulnerable.css`**, **`enforced-sanitizer.css`**, **`policy-lab.css`** | Stylesheets at playground root; **`frames/*.html`** link them with **`../`** (same origin) |
+| **`index.css`**, **`policy-lab.css`** | Stylesheets for **`index.html`** / **`policy-lab.html`** at playground root |
+| **`frames/enforced.css`**, **`frames/enforced-sanitizer.css`**, **`frames/vulnerable.css`** | Styles next to their **`frames/*.html`** demos; **`frames/*.html`** still load **`../violation-observe.js`** where used |
 | **`violation-observe.js`** | **§ G** — used by **`frames/enforced*.html`** only; **`frames/vulnerable.html`** uses a plain inline **`log()`** (no TT violations to observe) |
 | **`serve.mjs`** | Injects real **`Content-Security-Policy`** headers on **`frames/enforced.html`** and **`frames/enforced-sanitizer.html`**; serves **`.css`** with **`text/css`** |
 
