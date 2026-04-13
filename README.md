@@ -1,3 +1,7 @@
+---
+description: "Trusted Types & CSP cheatsheet: policies, TrustedHTML/TrustedScript, default policy migration, Sanitizer API (setHTML), Perfect Types, and a live playground."
+---
+
 # Trusted Types — Cheatsheet
 
 <p align="center">

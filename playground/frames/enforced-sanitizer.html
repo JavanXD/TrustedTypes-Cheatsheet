@@ -10,23 +10,23 @@
   <div class="scroll">
     <h2>Perfect Types — <code>trusted-types 'none'</code></h2>
     <p class="note">
-      Cheatsheet <strong>§ A.3</strong>: you <strong>cannot</strong> call <code>trustedTypes.createPolicy</code>.
+      Cheatsheet <strong>A.3</strong>: you <strong>cannot</strong> call <code>trustedTypes.createPolicy</code>.
       Untrusted HTML uses <code>Element.setHTML()</code> (HTML Sanitizer API), not <code>innerHTML = string</code>.
     </p>
 
     <div class="panel">
-      <h3>1 · Safe — <code>setHTML()</code></h3>
+      <h3>E.1 — Safe — <code>setHTML()</code></h3>
       <textarea id="htmlPayload" rows="2">&lt;p&gt;ok&lt;/p&gt;&lt;img src=x onerror=alert(1)&gt;</textarea>
       <button type="button" id="runSetHTML">Run → <code>out.setHTML(payload)</code></button>
     </div>
 
     <div class="panel">
-      <h3>2 · Legacy — <code>innerHTML</code> (expect <code>TypeError</code>)</h3>
+      <h3>D.1 — Legacy — <code>innerHTML</code> (expect <code>TypeError</code>)</h3>
       <button type="button" id="runInnerHTML">Run → <code>out.innerHTML = payload</code></button>
     </div>
 
     <div class="panel">
-      <h3>3 · JS sink — <code>eval</code></h3>
+      <h3>TrustedScript — <code>eval</code></h3>
       <textarea id="jsPayload" rows="2">alert('eval sink')</textarea>
       <button type="button" id="runEval">Run → <code>eval</code></button>
     </div>
@@ -43,7 +43,7 @@
   <script>
     /*
      * ---------------------------------------------------------------------------
-     * enforced-sanitizer.html — "Perfect Types" (cheatsheet § A.3 style)
+     * enforced-sanitizer.html — "Perfect Types" (cheatsheet A.3 style)
      * ---------------------------------------------------------------------------
      *
      * HTTP Content-Security-Policy from serve.mjs (CSP_PERFECT_TYPES) includes:
@@ -62,17 +62,17 @@
      * This file never calls createPolicy for real work — only the startup probe below
      * demonstrates that registration is blocked by CSP.
      *
-     * Violation visibility: README.md § G — createPlaygroundViolationAwareLog() in
+     * Violation visibility: README.md G — createPlaygroundViolationAwareLog() in
      * violation-observe.js (first log() attaches ReportingObserver + DOM listener).
      */
 
     const log = createPlaygroundViolationAwareLog("[enforced-sanitizer.html]");
 
     log(
-      "Demo ready — § G observers attached here (before sinks); createPolicy probe runs next.",
+      "Demo ready — G observers attached here (before sinks); createPolicy probe runs next.",
     );
 
-    // --- Demo 1: preferred path — setHTML (Sanitizer API) ---
+    // --- E.1: preferred path — setHTML (Sanitizer API) ---
     document.getElementById("runSetHTML").addEventListener("click", () => {
       const raw = document.getElementById("htmlPayload").value;
       const out = document.getElementById("out");
@@ -91,7 +91,7 @@
       }
     });
 
-    // --- Demo 2: legacy string sink — should fail under Perfect Types + enforcement ---
+    // --- D.1: legacy string sink — should fail under Perfect Types + enforcement ---
     document.getElementById("runInnerHTML").addEventListener("click", () => {
       const raw = document.getElementById("htmlPayload").value;
       const out = document.getElementById("out");
@@ -105,7 +105,7 @@
       }
     });
 
-    // --- Demo 3: eval — still a string script sink; expect failure ---
+    // --- TrustedScript / eval — string script sink; expect failure ---
     document.getElementById("runEval").addEventListener("click", () => {
       const raw = document.getElementById("jsPayload").value;
       setPlaygroundSinkContext(

@@ -9,7 +9,7 @@
 <body>
   <h2>Trusted Types on</h2>
   <p class="lede">
-    <code>serve.mjs</code> — cheatsheet <strong>§ A.2</strong>:
+    <code>serve.mjs</code> — cheatsheet <strong>A.2</strong>:
     <code>require-trusted-types-for 'script'</code> + <code>trusted-types myPolicy</code>.
     Same document shows <strong><code>setHTML()</code></strong> (browser sanitizer path) next to a strict <code>createHTML</code> for legacy <strong><code>innerHTML = string</code></strong> — you can add safe HTML APIs without “turning off” the rest of the page.
   </p>
@@ -20,21 +20,21 @@
   </div>
 
   <div class="panel">
-    <h3>1 · Safe — <code>setHtmlOut.setHTML(payload)</code></h3>
+    <h3>E.1 — Safe — <code>setHtmlOut.setHTML(payload)</code></h3>
     <button type="button" id="runSetHTML">Run → <code>setHTML</code> (HTML Sanitizer API)</button>
     <p class="sink-caption">Rendered here</p>
     <div id="setHtmlOut" class="sink-out"></div>
   </div>
 
   <div class="panel">
-    <h3>2 · Legacy — <code>innerHTML</code> = string</h3>
+    <h3>E.3 — Legacy — <code>innerHTML</code> = string</h3>
     <button type="button" id="runHtml">Run → <code>innerHTML</code> = string</button>
     <p class="sink-caption">Target element (lab policy rejects raw string)</p>
     <div id="innerHtmlOut" class="sink-out"></div>
   </div>
 
   <div class="panel">
-    <h3>3 · JS sink — <code>eval</code></h3>
+    <h3>TrustedScript — <code>eval</code></h3>
     <textarea id="jsPayload" rows="2">alert('DOM XSS — eval sink')</textarea>
     <button type="button" id="runEval">Run → <code>eval(string)</code></button>
   </div>
@@ -48,7 +48,7 @@
   <script>
     /*
      * ---------------------------------------------------------------------------
-     * enforced.html — Trusted Types "named policy" demo (cheatsheet § A.2 style)
+     * enforced.html — Trusted Types "named policy" demo (cheatsheet A.2 style)
      * ---------------------------------------------------------------------------
      *
      * Trusted Types does NOT mean “block your whole UI.” Typical patterns:
@@ -62,7 +62,7 @@
      * not how production policies must behave; it only isolates “legacy string sink”
      * failure. setHTML() below still runs under the same CSP + policy name.
      *
-     * Violation visibility: README.md § G — bootstrap log() after createPolicy attaches
+     * Violation visibility: README.md G — bootstrap log() after createPolicy attaches
      * observers before sinks. TypeErrors from innerHTML / eval use console.debug only.
      */
 
@@ -87,7 +87,7 @@
       },
     });
 
-    log("Demo ready — try setHTML first, then innerHTML / eval; policy + § G in log.");
+    log("Demo ready — try setHTML first, then innerHTML / eval; policy + G observers in log.");
 
     document.getElementById("runSetHTML").addEventListener("click", () => {
       const raw = document.getElementById("htmlPayload").value;

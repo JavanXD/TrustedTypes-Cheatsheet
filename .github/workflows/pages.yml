@@ -28,6 +28,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build:site
+        env:
+          SITE_URL: https://tt-cheatsheet.javan.de
       - uses: actions/upload-pages-artifact@v5.0.0
         with:
           path: site

@@ -19,7 +19,7 @@ const CSP_STRICT =
   "require-trusted-types-for 'script'; " +
   "trusted-types myPolicy";
 
-/** Cheatsheet § A.3 — no policies; safe HTML via Sanitizer API (`setHTML`), not `innerHTML = string`. */
+/** Cheatsheet A.3 — no policies; safe HTML via Sanitizer API (`setHTML`), not `innerHTML = string`. */
 const CSP_PERFECT_TYPES =
   "default-src 'none'; " +
   "script-src 'self' 'unsafe-inline'; " +

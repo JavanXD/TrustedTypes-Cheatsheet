@@ -11,14 +11,14 @@
   <p class="lede">Same patterns as the left column — <strong>intentionally unsafe</strong> after you click run.</p>
 
   <div class="panel">
-    <h3>1 · HTML sink — <code>innerHTML</code></h3>
+    <h3>D.1 — Legacy — <code>innerHTML</code></h3>
     <textarea id="htmlPayload" rows="2">&lt;img src=x onerror=alert(1)&gt;</textarea>
     <button type="button" id="runHtml">Run → <code>innerHTML</code> = string</button>
     <div id="out"></div>
   </div>
 
   <div class="panel">
-    <h3>2 · JS sink — <code>eval</code></h3>
+    <h3>TrustedScript — <code>eval</code></h3>
     <textarea id="jsPayload" rows="2">alert('DOM XSS — eval sink')</textarea>
     <button type="button" id="runEval">Run → <code>eval(string)</code></button>
   </div>
@@ -44,7 +44,7 @@
      * different security outcome, entirely because of the response header on the
      * other document, not because of different application logic here.
      *
-     * No README § G observers here: without CSP + Trusted Types enforcement there
+     * No README G observers here: without CSP + Trusted Types enforcement there
      * are no require-trusted-types-for violation reports for those sinks — only
      * frames/enforced.html / frames/enforced-sanitizer.html load violation-observe.js for that.
      */

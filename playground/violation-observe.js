@@ -1,14 +1,14 @@
 "use strict";
 
 /**
- * Cheatsheet README.md § G — "Seeing violations in the browser"
+ * Cheatsheet README.md G — "Seeing violations in the browser"
  *
  * Observers are registered the first time your playground log() runs, so
  * createPlaygroundViolationAwareLog() / lazy attach stay tied to the same function
  * violations will call into.
  *
  * Optional: before a sink runs, call setPlaygroundSinkContext(el, "innerHTML") (or a
- * plain string). That text is appended to § G log lines so reviewers see *where* the
+ * plain string). That text is appended to G log lines so reviewers see *where* the
  * sink was executed (element + parent).
  *
  * Only load this script from documents that actually send a TT-related CSP (e.g.
@@ -21,7 +21,7 @@
 let playgroundSinkDebug = "";
 
 /**
- * Remember which sink is about to run (consumed when the next § G line is logged).
+ * Remember which sink is about to run (consumed when the next G log line is written).
  * @param {Element | string} elOrNote - target element, or a free-form debug string
  * @param {string} [opLabel] - e.g. "innerHTML", "eval" (used when first arg is an Element)
  */
@@ -39,7 +39,7 @@ function setPlaygroundSinkContext(elOrNote, opLabel) {
 
 let sinkDebugClearScheduled = false;
 
-/** Append optional sink context; clear once after this turn so both § G paths can read it. */
+/** Append optional sink context; clear once after this turn so both G paths can read it. */
 function appendSinkDebugTo(line) {
   if (!playgroundSinkDebug) return line;
   const out = line + " | sink: " + playgroundSinkDebug;
@@ -127,7 +127,7 @@ function attachPlaygroundViolationLogging(log) {
   }
 
   document.addEventListener("securitypolicyviolation", (e) => {
-    // README § G uses console.error here; playground uses only log() → one console line.
+    // README G uses console.error here; playground uses only log() → one console line.
     const base = [e.violatedDirective, e.blockedURI, e.sample].filter(Boolean).join(" | ");
     log(
       appendSinkDebugTo(
@@ -138,7 +138,7 @@ function attachPlaygroundViolationLogging(log) {
 }
 
 /**
- * Returns log(msg) that mirrors README § G: first call runs attachPlaygroundViolationLogging(log)
+ * Returns log(msg) that mirrors README G: first call runs attachPlaygroundViolationLogging(log)
  * then prints a one-line “observers installed” note, then behaves as a normal logger.
  *
  * @param {string} scopeLabel - prefix for console.log (e.g. "[enforced.html]")
@@ -149,18 +149,18 @@ function createPlaygroundViolationAwareLog(scopeLabel) {
     if (!attached) {
       attached = true;
       const boot =
-        "§ G violation observers installed (ReportingObserver + securitypolicyviolation).";
+        "G — violation observers installed (ReportingObserver + securitypolicyviolation).";
       console.log(scopeLabel, boot);
       const bootEl = document.getElementById("log");
       if (bootEl) bootEl.textContent += boot + "\n";
       try {
         attachPlaygroundViolationLogging(log);
       } catch (e) {
-        console.warn(scopeLabel, "§ G attach failed (ReportingObserver / listener):", e);
+        console.warn(scopeLabel, "G attach failed (ReportingObserver / listener):", e);
         const el = document.getElementById("log");
         if (el) {
           el.textContent +=
-            "§ G attach failed: " + e.name + " — " + e.message + " (securitypolicyviolation may still work).\n";
+            "G attach failed: " + e.name + " — " + e.message + " (securitypolicyviolation may still work).\n";
         }
       }
     }

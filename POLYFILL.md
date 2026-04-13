@@ -1,3 +1,7 @@
+---
+description: "W3C Trusted Types polyfill for older browsers: api_only vs full ES5 builds, npm, tinyfill, and how shims differ from real CSP enforcement."
+---
+
 # Trusted Types — Polyfill
 
 <p align="center">
