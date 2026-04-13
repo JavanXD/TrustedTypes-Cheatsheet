@@ -75,6 +75,10 @@ function walkMarkdownFiles(dir) {
   const out = [];
   for (const name of fs.readdirSync(dir, { withFileTypes: true })) {
     if (SKIP_DIR.has(name.name)) continue;
+    // Playground HTML needs serve.mjs (CSP); do not ship under static site/.
+    if (name.isDirectory() && name.name === "playground") {
+      continue;
+    }
     const full = path.join(dir, name.name);
     if (name.isDirectory()) out.push(...walkMarkdownFiles(full));
     else if (name.name.endsWith(".md")) out.push(full);
@@ -245,11 +249,6 @@ function ensureDir(p) {
 function main() {
   fs.rmSync(outDir, { recursive: true, force: true });
   ensureDir(outDir);
-
-  const playgroundSrc = path.join(root, "playground");
-  if (fs.existsSync(playgroundSrc)) {
-    fs.cpSync(playgroundSrc, path.join(outDir, "playground"), { recursive: true });
-  }
 
   const mdFiles = walkMarkdownFiles(root);
   for (const mdAbs of mdFiles) {

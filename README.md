@@ -1,13 +1,17 @@
 # Trusted Types — Cheatsheet
 
 <p align="center">
-  <strong>CSP</strong> · <strong>Trusted Types</strong> · <strong>HTML Sanitizer API</strong> · <a href="playground/README.md"><code>playground/</code></a>
+  <strong>CSP</strong> · <strong>Trusted Types</strong> · <strong>HTML Sanitizer API</strong> · <a href="https://github.com/JavanXD/TrustedTypes-Cheatsheet/tree/main/playground"><code>playground/</code></a>
 </p>
 
 ---
 
 > [!IMPORTANT]
-> **The shift in one breath:** APIs such as **`innerHTML`**, **`eval`**, and **`HTMLScriptElement.src`** are **DOM XSS sinks**: they historically accepted ordinary **strings**, so attacker-controlled string data could become executable behavior. **Trusted Types** enforcement uses **`Content-Security-Policy: require-trusted-types-for 'script'`** together with the **`trusted-types`** directive, which allowlists **`TrustedTypePolicy`** names. Covered sinks must receive **`TrustedHTML`**, **`TrustedScript`**, or **`TrustedScriptURL`** from **`trustedTypes.createPolicy(...)`**, except where the specification routes string input through a registered **`default`** policy. Sanitization and validation therefore live in **`TrustedTypePolicy`** callbacks, and which policies may run is **declared in CSP** rather than implied by scattered call sites. Separately, the **HTML Sanitizer API** (**`setHTML()`**, **`Document.parseHTML()`**, …) provides insertion paths where the engine applies its own rules; **`trusted-types 'none'`** (“**Perfect Types**”) forbids registering policies and relies on those Sanitizer paths for vetted HTML.
+> **In plain terms:** Things like **`innerHTML`**, **`eval`**, and **`script.src`** are dangerous: they take **plain text** that can turn into running code if an attacker controls that text.
+>
+> **Trusted Types** (via CSP: **`require-trusted-types-for 'script'`** + **`trusted-types`**) tells the browser: for those APIs, only accept **wrapped values** (**`TrustedHTML`**, **`TrustedScript`**, **`TrustedScriptURL`**) from **`trustedTypes.createPolicy(...)`**—or, in some cases, a string that goes through a **`default`** policy you registered. **You** put sanitization inside the policy; **CSP** lists which policy names are allowed, instead of every file doing its own thing.
+>
+> **HTML Sanitizer API** (**`setHTML()`**, **`Document.parseHTML()`**, …) is different: the **browser** cleans the HTML before it lands in the page. With **`trusted-types 'none'`** (“**Perfect Types**”) you **cannot** register policies, so you use those Sanitizer paths (not raw **`innerHTML`**) for HTML from strings.
 
 ## Table of contents
 
@@ -22,7 +26,7 @@
 - [F. HTML Sanitizer API & Trusted Types](#cat-f)
 - [G. Seeing violations in the browser](#cat-g)
 - [H. Tiny polyfill (old browsers)](#cat-h)
-- [Links & resources](#links-resources) · [`POLYFILL.md`](POLYFILL.md) · [Live demos](playground/README.md)
+- [Links & resources](#links-resources) · [`POLYFILL.md`](POLYFILL.md) · [Live demos](https://github.com/JavanXD/TrustedTypes-Cheatsheet/blob/main/playground/README.md)
 
 <details>
 <summary><strong>Section map (same links as a table)</strong></summary>
@@ -38,7 +42,7 @@
 | [F. Sanitizer API + Trusted Types](#cat-f) | Safe vs less-safe Sanitizer methods; how that fits together with Trusted Types |
 | [G. Seeing violations in the browser](#cat-g) | Logging CSP / Trusted Types problems |
 | [H. Tiny polyfill (old browsers)](#cat-h) | A few lines so `createPolicy` exists without native support; details in **`POLYFILL.md`** |
-| [Live demos (`playground/`)](playground/README.md) | Split view leads with **A.3** **`setHTML()`** + Perfect Types vs vulnerable **`innerHTML`** / **`eval`**; **A.2** in **policy lab**; **`node playground/serve.mjs`**; **DevTools → Console** for **`log()`** |
+| [Live demos (`playground/`)](https://github.com/JavanXD/TrustedTypes-Cheatsheet/blob/main/playground/README.md) | Split view leads with **A.3** **`setHTML()`** + Perfect Types vs vulnerable **`innerHTML`** / **`eval`**; **A.2** in **policy lab**; **`node playground/serve.mjs`**; **DevTools → Console** for **`log()`** |
 
 </details>
 
@@ -525,4 +529,4 @@ if (typeof trustedTypes === "undefined") {
 ### Other files in this repository
 
 - [`POLYFILL.md`](POLYFILL.md) — polyfill variants, npm, CDN script examples
-- [`playground/`](playground/) — **`index.html`** highlights **A.3** **`setHTML()`** + Perfect Types vs vulnerable patterns; **policy lab** covers **A.2** `myPolicy`; see [`playground/README.md`](playground/README.md)
+- [`playground/`](https://github.com/JavanXD/TrustedTypes-Cheatsheet/tree/main/playground) — **`index.html`** highlights **A.3** **`setHTML()`** + Perfect Types vs vulnerable patterns; **policy lab** covers **A.2** `myPolicy`; see [`playground/README.md`](https://github.com/JavanXD/TrustedTypes-Cheatsheet/blob/main/playground/README.md) (demos need **`node playground/serve.mjs`**; they are not hosted on the static cheatsheet site)

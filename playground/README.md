@@ -2,12 +2,14 @@
 
 Local **DOM XSS** vs **Trusted Types** demos aligned with the main cheatsheet (**`README.md` § A.2**, **§ A.3**, **§ B**, **§ E.1**): no third-party sanitizers — the **split view** leads with **§ A.3** (**Perfect Types** + **`Element.setHTML()`**); **§ A.2** named policy is one click away in **`policy-lab.html`**.
 
+The **static cheatsheet** (GitHub Pages / custom domain) **does not publish** playground **`.html`** (or related assets): **`serve.mjs`** must send real **`Content-Security-Policy`** headers, so demos only work from a **local clone** or by opening files from **GitHub**.
+
 ## Source & download
 
-If you opened this page on the **deployed cheatsheet** (not on GitHub), you still need the **full `playground/` tree** on disk to run **`serve.mjs`** and the demos.
+You need the **full `playground/` tree** on disk to run **`serve.mjs`** and the demos.
 
 - **[TrustedTypes-Cheatsheet on GitHub](https://github.com/JavanXD/TrustedTypes-Cheatsheet)** — clone, or use **Code → Download ZIP**.
-- **[`playground/` folder (`main`)](https://github.com/JavanXD/TrustedTypes-Cheatsheet/tree/main/playground)** — browse the HTML, CSS, and **`serve.mjs`** that match this site.
+- **[`playground/` folder (`main`)](https://github.com/JavanXD/TrustedTypes-Cheatsheet/tree/main/playground)** — browse the HTML, CSS, and **`serve.mjs`** in the repo.
 - **[ZIP of `main` branch](https://github.com/JavanXD/TrustedTypes-Cheatsheet/archive/refs/heads/main.zip)** — after unpacking, `cd` into **`TrustedTypes-Cheatsheet-main/playground`** (folder name may include a `-main` suffix) and run the commands below.
 
 ## Run it (use HTTP, not `file://`)

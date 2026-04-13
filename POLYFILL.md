@@ -279,7 +279,7 @@ If you still support **older** Chromium / WebKit / Firefox without TT, keep **`a
 ## Related in this repo
 
 - [`README.md`](README.md) — full patterns and CSP walkthrough; tinyfill is covered in **[H. Tiny polyfill](README.md#cat-h)**.
-- [`playground/`](playground/) — **DOM XSS** vs **Trusted Types** / **`setHTML()`** demos (`node playground/serve.mjs`); see [`playground/README.md`](playground/README.md).
+- [`playground/`](https://github.com/JavanXD/TrustedTypes-Cheatsheet/tree/main/playground) — **DOM XSS** vs **Trusted Types** / **`setHTML()`** demos (`node playground/serve.mjs`); see [`playground/README.md`](https://github.com/JavanXD/TrustedTypes-Cheatsheet/blob/main/playground/README.md) (not hosted on the static site).
 
 ---
 
