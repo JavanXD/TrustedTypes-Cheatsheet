@@ -12,7 +12,7 @@
  * sink was executed (element + parent).
  *
  * Only load this script from documents that actually send a TT-related CSP (e.g.
- * enforced.html, enforced-sanitizer.html). A page with no CSP has nothing useful
+ * frames/enforced.html, frames/enforced-sanitizer.html). A page with no CSP has nothing useful
  * for ReportingObserver / securitypolicyviolation for Trusted Types — use a plain
  * log() on those pages (see vulnerable.html).
  */

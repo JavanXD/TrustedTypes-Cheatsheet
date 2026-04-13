@@ -1,6 +1,6 @@
 /**
  * Minimal static server for the playground.
- * Injects CSP on enforced.html and enforced-sanitizer.html only (basename match).
+ * Injects CSP on frames/enforced.html and frames/enforced-sanitizer.html only (basename match).
  */
 import http from "node:http";
 import fs from "node:fs/promises";
@@ -71,8 +71,8 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, "127.0.0.1", () => {
   console.error(`Playground: http://127.0.0.1:${PORT}/`);
   console.error(
-    "CSP response header: enforced.html → CSP_STRICT (trusted-types myPolicy); " +
-      "enforced-sanitizer.html → CSP_PERFECT_TYPES (trusted-types 'none'); " +
+    "CSP response header: frames/enforced.html → CSP_STRICT (trusted-types myPolicy); " +
+      "frames/enforced-sanitizer.html → CSP_PERFECT_TYPES (trusted-types 'none'); " +
       "other HTML → no Content-Security-Policy",
   );
 });

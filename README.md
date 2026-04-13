@@ -1,9 +1,31 @@
-# Trusted Types - Cheatsheet
+# Trusted Types — Cheatsheet
 
+<p align="center">
+  <strong>CSP</strong> · <strong>Trusted Types</strong> · <strong>HTML Sanitizer API</strong> · <a href="playground/README.md"><code>playground/</code></a>
+</p>
+
+---
+
+> [!IMPORTANT]
 > **The shift in one breath:** APIs such as **`innerHTML`**, **`eval`**, and **`HTMLScriptElement.src`** are **DOM XSS sinks**: they historically accepted ordinary **strings**, so attacker-controlled string data could become executable behavior. **Trusted Types** enforcement uses **`Content-Security-Policy: require-trusted-types-for 'script'`** together with the **`trusted-types`** directive, which allowlists **`TrustedTypePolicy`** names. Covered sinks must receive **`TrustedHTML`**, **`TrustedScript`**, or **`TrustedScriptURL`** from **`trustedTypes.createPolicy(...)`**, except where the specification routes string input through a registered **`default`** policy. Sanitization and validation therefore live in **`TrustedTypePolicy`** callbacks, and which policies may run is **declared in CSP** rather than implied by scattered call sites. Separately, the **HTML Sanitizer API** (**`setHTML()`**, **`Document.parseHTML()`**, …) provides insertion paths where the engine applies its own rules; **`trusted-types 'none'`** (“**Perfect Types**”) forbids registering policies and relies on those Sanitizer paths for vetted HTML.
 
+## Table of contents
 
-## How this file is organized
+**Guides**
+
+- [A. HTTP / CSP](#cat-a) — report-only, enforce, Perfect Types
+- [About `DOMPurify` in examples](#about-sanitizers-in-examples)
+- [B. Policies & `TrustedHTML`](#cat-b)
+- [C. Default policy (migration)](#cat-c)
+- [D. What breaks under enforcement](#cat-d)
+- [E. Safe ways to put HTML on the page](#cat-e)
+- [F. HTML Sanitizer API & Trusted Types](#cat-f)
+- [G. Seeing violations in the browser](#cat-g)
+- [H. Tiny polyfill (old browsers)](#cat-h)
+- [Links & resources](#links-resources) · [`POLYFILL.md`](POLYFILL.md) · [Live demos](playground/README.md)
+
+<details>
+<summary><strong>Section map (same links as a table)</strong></summary>
 
 | Section | What you will find |
 |---------|-------------------|
@@ -16,7 +38,9 @@
 | [F. Sanitizer API + Trusted Types](#cat-f) | Safe vs less-safe Sanitizer methods; how that fits together with Trusted Types |
 | [G. Seeing violations in the browser](#cat-g) | Logging CSP / Trusted Types problems |
 | [H. Tiny polyfill (old browsers)](#cat-h) | A few lines so `createPolicy` exists without native support; details in **`POLYFILL.md`** |
-| [Live demos (`playground/`)](playground/README.md) | Split view leads with **§ A.3** **`setHTML()`** + Perfect Types vs vulnerable **`innerHTML`** / **`eval`**; **§ A.2** in **policy lab**; **`node playground/serve.mjs`**; **DevTools → Console** for **`log()`** |
+| [Live demos (`playground/`)](playground/README.md) | Split view leads with **A.3** **`setHTML()`** + Perfect Types vs vulnerable **`innerHTML`** / **`eval`**; **A.2** in **policy lab**; **`node playground/serve.mjs`**; **DevTools → Console** for **`log()`** |
+
+</details>
 
 ---
 
@@ -24,7 +48,8 @@
 
 ## A. HTTP / Content-Security-Policy
 
-**Tip:** Start with headers that only **report** problems. When nothing important breaks, switch to headers that **enforce** rules. Always send CSP from your **server** for browsers that support Trusted Types natively.
+> [!TIP]
+> Start with headers that only **report** problems. When nothing important breaks, switch to headers that **enforce** rules. Always send CSP from your **server** for browsers that support Trusted Types natively.
 
 ### A.1 Report-only — log issues, do not block yet
 
@@ -52,13 +77,14 @@ Content-Security-Policy: require-trusted-types-for 'script'; trusted-types myPol
 
 ### A.3 “Perfect Types” — no policies; use the Sanitizer API instead
 
-Here you **forbid** creating any Trusted Types policy (`trusted-types 'none'`). Legacy string APIs such as `innerHTML = "..."` cannot be used in the usual way. You insert HTML with **`setHTML()`** or parse with **`Document.parseHTML()`** instead.
+> [!NOTE]
+> Here you **forbid** creating any Trusted Types policy (`trusted-types 'none'`). Legacy string APIs such as `innerHTML = "..."` cannot be used in the usual way. You insert HTML with **`setHTML()`** or parse with **`Document.parseHTML()`** instead.
 
 ```http
 Content-Security-Policy: require-trusted-types-for 'script'; trusted-types 'none'
 ```
 
-Worked examples: [§ E.1 `setHTML()`](#e-1-sethtml) and [§ F.4 `Document.parseHTML()`](#f-4-documentparsehtml).
+Worked examples: [E.1 `setHTML()`](#e-1-sethtml) and [F.4 `Document.parseHTML()`](#f-4-documentparsehtml).
 
 ---
 
@@ -66,11 +92,12 @@ Worked examples: [§ E.1 `setHTML()`](#e-1-sethtml) and [§ F.4 `Document.parseH
 
 ### About `DOMPurify` in the examples (it is optional)
 
-Many snippets call **`DOMPurify.sanitize(...)`** because upstream docs use it as a well-known stand-in for “**turn untrusted HTML into something safer before it hits a sink**.” **You do not have to use DOMPurify.**
+> [!NOTE]
+> Many snippets call **`DOMPurify.sanitize(...)`** because upstream docs use it as a well-known stand-in for “**turn untrusted HTML into something safer before it hits a sink**.” **You do not have to use DOMPurify.**
 
 Inside **`createHTML`** (and friends), the body can be **any** approach you trust and can review, for example:
 
-- **Native HTML Sanitizer API** — often you can skip `innerHTML` entirely and use **`element.setHTML(...)`** or **`Document.parseHTML(...)`** so the browser applies its own XSS-safe rules (see **[§ E.1](#e-1-sethtml)** and **[§ F](#cat-f)**).
+- **Native HTML Sanitizer API** — often you can skip `innerHTML` entirely and use **`element.setHTML(...)`** or **`Document.parseHTML(...)`** so the browser applies its own XSS-safe rules (see **[E.1](#e-1-sethtml)** and **[F](#cat-f)**).
 - **Another sanitizer library**, or **code you wrote yourself**, as long as the rules are clear and maintained.
 - **Strict escaping** when you only need **plain text**, not rich HTML.
 
@@ -98,7 +125,8 @@ Browsers group dangerous APIs into a few kinds. Each kind has a matching **trust
 
 Your policy implements **`createHTML`**, **`createScript`**, and/or **`createScriptURL`** depending on which sinks your code uses.
 
-**Minimal flow:** create a policy → wrap the string → assign the trusted value. The **`createHTML`** callback can use **any** sanitizer you choose (here: DOMPurify — see **[About `DOMPurify`](#about-sanitizers-in-examples)**):
+> [!TIP]
+> **Minimal flow:** create a policy → wrap the string → assign the trusted value. The **`createHTML`** callback can use **any** sanitizer you choose (here: DOMPurify — see **[About `DOMPurify`](#about-sanitizers-in-examples)**).
 
 ```js
 const policy = trustedTypes.createPolicy("my-policy", {
@@ -111,7 +139,8 @@ const trustedHTML = policy.createHTML(userInput);
 element.innerHTML = trustedHTML;
 ```
 
-If your CSP includes **`trusted-types my-policy`**, the name you pass to **`createPolicy`** must be **`my-policy`** (same string).
+> [!NOTE]
+> If your CSP includes **`trusted-types my-policy`**, the name you pass to **`createPolicy`** must be **`my-policy`** (same string).
 
 <a id="b-2-register-feature-detect"></a>
 
@@ -134,7 +163,10 @@ The CSP **`trusted-types`** list must include **`myPolicy`** if you use that nam
 
 ### B.3 Escape-only policy (good for plain text, not rich HTML)
 
-This only escapes special characters. It is **not** a full sanitizer for rich HTML. Use DOMPurify or **`setHTML()`** when users can pass real markup (escape-only example):
+> [!WARNING]
+> This only escapes special characters. It is **not** a full sanitizer for rich HTML. Use DOMPurify or **`setHTML()`** when users can pass real markup.
+
+Escape-only example:
 
 ```js
 const escapeHTMLPolicy = trustedTypes.createPolicy("myEscapePolicy", {
@@ -170,11 +202,13 @@ if (window.trustedTypes && trustedTypes.createPolicy) {
 }
 ```
 
-For **your own** code, prefer a **named** policy at each call site so rules stay easy to find.
+> [!TIP]
+> For **your own** code, prefer a **named** policy at each call site so rules stay easy to find.
 
 ### C.2 Default policy that always fails (finds leftover string uses)
 
-Useful while refactoring: any string that hits a sink **throws** after logging:
+> [!NOTE]
+> Useful while refactoring: any string that hits a sink **throws** after logging.
 
 ```js
 trustedTypes.createPolicy("default", {
@@ -191,11 +225,13 @@ trustedTypes.createPolicy("default", {
 
 ## D. What breaks under enforcement
 
-A **sink** is a browser API that can turn a string into running script or unsafe HTML (for example **`innerHTML`**).
+> [!NOTE]
+> A **sink** is a browser API that can turn a string into running script or unsafe HTML (for example **`innerHTML`**).
 
 ### D.1 Assigning a plain string to `innerHTML`
 
-With **`require-trusted-types-for 'script'`** enforced and **no** usable **`default`** policy, this throws **`TypeError`**:
+> [!CAUTION]
+> With **`require-trusted-types-for 'script'`** enforced and **no** usable **`default`** policy, this throws **`TypeError`**.
 
 ```js
 const userInput = "<p>I might be XSS</p>";
@@ -222,7 +258,8 @@ document.body.appendChild(script); // under enforcement: may need TrustedScript 
 
 ## E. Safe ways to put HTML on the page
 
-You usually want **one** clear pattern per place in your code: either the browser’s **Sanitizer** path, **DOM** construction without HTML strings, your own **Trusted Types policy**, or **DOMPurify** returning a trusted value.
+> [!TIP]
+> You usually want **one** clear pattern per place in your code: either the browser’s **Sanitizer** path, **DOM** construction without HTML strings, your own **Trusted Types policy**, or **DOMPurify** returning a trusted value.
 
 ```mermaid
 flowchart TD
@@ -236,7 +273,7 @@ flowchart TD
   q3 -->|Library returns TrustedHTML| e4[E.4 — DOMPurify]
 ```
 
-| § | Approach | Idea in one line | Good when… |
+| # | Approach | Idea in one line | Good when… |
 |---|----------|----------------|-------------|
 | [E.1](#e-1-sethtml) | **`setHTML()`** | Browser parses HTML and drops unsafe parts | You can rely on the **HTML Sanitizer API**; fits **Perfect Types** (`trusted-types 'none'`) |
 | [E.2](#e-2-dom-apis) | **DOM APIs** | Build nodes with `createElement`, `textContent`, … | You do **not** need a chunk of HTML as text |
@@ -255,7 +292,8 @@ const target = document.getElementById("target");
 target.setHTML(untrustedString);
 ```
 
-This path does **not** use your `trustedTypes.createPolicy` code—the browser runs its own safe rules. List of safe methods and how this interacts with Trusted Types: [§ F.1–F.3](#cat-f).
+> [!TIP]
+> This path does **not** use your `trustedTypes.createPolicy` code—the browser runs its own safe rules. List of safe methods and how this interacts with Trusted Types: [F.1–F.3](#cat-f).
 
 <a id="e-2-dom-apis"></a>
 
@@ -270,7 +308,8 @@ img.src = "xyz.jpg";
 el.appendChild(img);
 ```
 
-Avoid:
+> [!WARNING]
+> Avoid assigning raw HTML strings when you can build structure with the DOM instead.
 
 ```js
 el.innerHTML = "<img src=xyz.jpg>";
@@ -280,7 +319,7 @@ el.innerHTML = "<img src=xyz.jpg>";
 
 ### E.3 Your policy + `innerHTML`
 
-Same steps as [§ B.1](#b-1-mdn-trusted-types-api). Use this when you are **not** using **`setHTML()`** but you do use **`innerHTML`** with Trusted Types:
+Same steps as [B.1](#b-1-mdn-trusted-types-api). Use this when you are **not** using **`setHTML()`** but you do use **`innerHTML`** with Trusted Types:
 
 ```js
 const policy = trustedTypes.createPolicy("myPolicy", {
@@ -329,7 +368,8 @@ Prefer these over **`innerHTML = string`** for **untrusted** HTML when the brows
 
 ### F.2 “Unsafe” methods — you accept more risk
 
-They follow **your** sanitizer config only. With **no** config they behave closer to permissive **`innerHTML`**. Only use them when you truly need something the safe APIs strip—and treat the result as **still potentially dangerous**, just narrower than raw HTML.
+> [!WARNING]
+> They follow **your** sanitizer config only. With **no** config they behave closer to permissive **`innerHTML`**. Only use them when you truly need something the safe APIs strip—and treat the result as **still potentially dangerous**, just narrower than raw HTML.
 
 This naming echoes a pattern front-end stacks have used for a long time: **opt-in APIs whose names scream “higher risk”** so they stand out in code review—think **React’s** `dangerouslySetInnerHTML`, or **Angular’s** explicit sanitizer bypasses (`bypassSecurityTrustHtml`, …). A decade or so later, **browsers** adopted the same idea with **`setHTMLUnsafe` / `parseHTMLUnsafe`**: the safe path is the default; the **`Unsafe`** variant is deliberate.
 
@@ -395,9 +435,10 @@ For current browser support, see **`Document.parseHTML()`**.
 
 ### F.5 `setHTMLUnsafe` — only if you really need it
 
-**Where “custom config” lives:** `setHTMLUnsafe(input, options)` is documented on MDN as [`Element.setHTMLUnsafe()`](https://developer.mozilla.org/en-US/docs/Web/API/Element/setHTMLUnsafe). The optional **`options.sanitizer`** may be a live **[`Sanitizer`](https://developer.mozilla.org/en-US/docs/Web/API/Sanitizer)** instance, a plain **[`SanitizerConfig`](https://developer.mozilla.org/en-US/docs/Web/API/SanitizerConfig)** dictionary (allow / remove lists for **elements**, **attributes**, **comments**, **`data-*`**, …), or the string **`"default"`** for the browser’s built-in safe baseline. For a **`Sanitizer`** object, start from **[`new Sanitizer(options)`](https://developer.mozilla.org/en-US/docs/Web/API/Sanitizer/Sanitizer)** and optionally tune with **`allowAttribute()`**, **`removeAttribute()`**, **`allowElement()`**, **`removeElement()`**, and related methods. This cheatsheet does not duplicate the full matrix—**`Unsafe`** plus custom lists is a code-review hotspot, so use MDN (and the default configuration page linked from there) as the canonical reference for what your rules still permit.
+> [!NOTE]
+> **Where “custom config” lives:** `setHTMLUnsafe(input, options)` is documented on MDN as [`Element.setHTMLUnsafe()`](https://developer.mozilla.org/en-US/docs/Web/API/Element/setHTMLUnsafe). The optional **`options.sanitizer`** may be a live **[`Sanitizer`](https://developer.mozilla.org/en-US/docs/Web/API/Sanitizer)** instance, a plain **[`SanitizerConfig`](https://developer.mozilla.org/en-US/docs/Web/API/SanitizerConfig)** dictionary (allow / remove lists for **elements**, **attributes**, **comments**, **`data-*`**, …), or the string **`"default"`** for the browser’s built-in safe baseline. For a **`Sanitizer`** object, start from **[`new Sanitizer(options)`](https://developer.mozilla.org/en-US/docs/Web/API/Sanitizer/Sanitizer)** and optionally tune with **`allowAttribute()`**, **`removeAttribute()`**, **`allowElement()`**, **`removeElement()`**, and related methods. This cheatsheet does not duplicate the full matrix—**`Unsafe`** plus custom lists is a code-review hotspot, so use MDN (and the default configuration page linked from there) as the canonical reference for what your rules still permit.
 
-Same API family as **`setHTML()`** in [§ E.1](#e-1-sethtml). Example: you widen the config (still risky):
+Same API family as **`setHTML()`** in [E.1](#e-1-sethtml). Example: you widen the config (still risky):
 
 ```js
 const sanitizer = new Sanitizer();
@@ -412,7 +453,7 @@ const sanitizer = new Sanitizer({ elements: ["p", "b", "div"] });
 someElement.setHTMLUnsafe(untrustedString, { sanitizer });
 ```
 
-Prefer **[§ E.1 `setHTML()`](#e-1-sethtml)** unless you have a rare need for **`Unsafe`**. How that interacts with Trusted Types: **[§ F.3](#f-3-sanitizer-plus-trusted-types)**.
+Prefer **[E.1 `setHTML()`](#e-1-sethtml)** unless you have a rare need for **`Unsafe`**. How that interacts with Trusted Types: **[F.3](#f-3-sanitizer-plus-trusted-types)**.
 
 ---
 
@@ -420,7 +461,8 @@ Prefer **[§ E.1 `setHTML()`](#e-1-sethtml)** unless you have a rare need for **
 
 ## G. Seeing violations in the browser
 
-So you can debug or send reports to your backend while testing:
+> [!TIP]
+> Use these patterns while debugging or to forward reports to your backend during testing.
 
 ```js
 const observer = new ReportingObserver((reports) => {
@@ -447,7 +489,8 @@ document.addEventListener("securitypolicyviolation", (e) => {
 
 ## H. Tiny “polyfill” for old browsers (tinyfill)
 
-A few lines so **`trustedTypes.createPolicy`** exists when the browser has **no** native API. It does **not** add real CSP enforcement—it only helps your code run and still call your sanitizer:
+> [!CAUTION]
+> A few lines so **`trustedTypes.createPolicy`** exists when the browser has **no** native API. This does **not** add real CSP enforcement—it only helps your code run and still call your sanitizer.
 
 ```js
 if (typeof trustedTypes === "undefined") {
@@ -455,26 +498,31 @@ if (typeof trustedTypes === "undefined") {
 }
 ```
 
-Always test with **real** Trusted Types **enforcement** in a current browser too. Longer explanation: **`POLYFILL.md`**.
+> [!IMPORTANT]
+> Always test with **real** Trusted Types **enforcement** in a current browser too. Longer explanation: [`POLYFILL.md`](POLYFILL.md).
 
 ---
 
+<a id="links-resources"></a>
+
 ## Links & Resources
 
-### Official documentation 
+### Official documentation
 
-- W3C — Trusted Types (spec, incl. pre-navigation / `javascript:`): `https://w3c.github.io/trusted-types/dist/spec/`
-- MDN — Trusted Types API: `https://developer.mozilla.org/en-US/docs/Web/API/Trusted_Types_API`
-- MDN — HTML Sanitizer API: `https://developer.mozilla.org/en-US/docs/Web/API/HTML_Sanitizer_API`
-- MDN — Default sanitizer configuration: `https://developer.mozilla.org/en-US/docs/Web/API/HTML_Sanitizer_API/Default_sanitizer_configuration`
-- MDN — `Sanitizer` constructor (configuration dictionary): `https://developer.mozilla.org/en-US/docs/Web/API/Sanitizer/Sanitizer`
-- MDN — `SanitizerConfig`: `https://developer.mozilla.org/en-US/docs/Web/API/SanitizerConfig`
-- MDN — `Element.setHTMLUnsafe()`: `https://developer.mozilla.org/en-US/docs/Web/API/Element/setHTMLUnsafe`
-- MDN — `Document.parseHTML()`: `https://developer.mozilla.org/en-US/docs/Web/API/Document/parseHTML_static`
-- web.dev — Trusted Types: `https://web.dev/articles/trusted-types`
-- Frederik Braun — Perfect types with `setHTML()`: `https://frederikbraun.de/perfect-types-with-sethtml.html`
+| Topic | Link |
+|------|------|
+| W3C Trusted Types (spec, incl. pre-navigation / `javascript:`) | [w3c.github.io/trusted-types](https://w3c.github.io/trusted-types/dist/spec/) |
+| MDN — Trusted Types API | [developer.mozilla.org](https://developer.mozilla.org/en-US/docs/Web/API/Trusted_Types_API) |
+| MDN — HTML Sanitizer API | [developer.mozilla.org](https://developer.mozilla.org/en-US/docs/Web/API/HTML_Sanitizer_API) |
+| MDN — Default sanitizer configuration | [developer.mozilla.org](https://developer.mozilla.org/en-US/docs/Web/API/HTML_Sanitizer_API/Default_sanitizer_configuration) |
+| MDN — `Sanitizer` constructor | [developer.mozilla.org](https://developer.mozilla.org/en-US/docs/Web/API/Sanitizer/Sanitizer) |
+| MDN — `SanitizerConfig` | [developer.mozilla.org](https://developer.mozilla.org/en-US/docs/Web/API/SanitizerConfig) |
+| MDN — `Element.setHTMLUnsafe()` | [developer.mozilla.org](https://developer.mozilla.org/en-US/docs/Web/API/Element/setHTMLUnsafe) |
+| MDN — `Document.parseHTML()` | [developer.mozilla.org](https://developer.mozilla.org/en-US/docs/Web/API/Document/parseHTML_static) |
+| web.dev — Trusted Types | [web.dev](https://web.dev/articles/trusted-types) |
+| Frederik Braun — Perfect types with `setHTML()` | [frederikbraun.de](https://frederikbraun.de/perfect-types-with-sethtml.html) |
 
 ### Other files in this repository
 
-- `POLYFILL.md` — polyfill variants, npm, CDN script examples
-- `playground/` — **`index.html`** leads with **§ A.3** + **`setHTML()`** vs vulnerable; **policy lab** links **§ A.2** `myPolicy`; **`playground/README.md`**
+- [`POLYFILL.md`](POLYFILL.md) — polyfill variants, npm, CDN script examples
+- [`playground/`](playground/) — **`index.html`** highlights **A.3** **`setHTML()`** + Perfect Types vs vulnerable patterns; **policy lab** covers **A.2** `myPolicy`; see [`playground/README.md`](playground/README.md)
