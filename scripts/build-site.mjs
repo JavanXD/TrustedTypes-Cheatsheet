@@ -10,11 +10,9 @@ const root = path.resolve(__dirname, "..");
 const outDir = path.join(root, "site");
 
 const CDN = "https://cdnjs.cloudflare.com/ajax/libs";
-const MARKDOWN_LIGHT = `${CDN}/github-markdown-css/5.5.1/github-markdown.min.css`;
-const MARKDOWN_DARK = `${CDN}/github-markdown-css/5.5.1/github-markdown-dark.min.css`;
+const MARKDOWN_CSS = `${CDN}/github-markdown-css/5.5.1/github-markdown.min.css`;
 const HLJS_VER = "11.11.1";
-const HLJS_GITHUB_LIGHT = `${CDN}/highlight.js/${HLJS_VER}/styles/github.min.css`;
-const HLJS_GITHUB_DARK = `${CDN}/highlight.js/${HLJS_VER}/styles/github-dark.min.css`;
+const HLJS_GITHUB = `${CDN}/highlight.js/${HLJS_VER}/styles/github.min.css`;
 const MERMAID_ESM = "https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs";
 
 const SKIP_DIR = new Set([
@@ -174,14 +172,13 @@ function wrapPage({ title, bodyHtml }) {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="color-scheme" content="light dark" />
+  <meta name="color-scheme" content="light" />
   <title>${escapeHtml(title)}</title>
-  <link rel="stylesheet" href="${MARKDOWN_LIGHT}" media="(prefers-color-scheme: light)" crossorigin="anonymous" />
-  <link rel="stylesheet" href="${MARKDOWN_DARK}" media="(prefers-color-scheme: dark)" crossorigin="anonymous" />
-  <link rel="stylesheet" href="${HLJS_GITHUB_LIGHT}" media="(prefers-color-scheme: light)" crossorigin="anonymous" />
-  <link rel="stylesheet" href="${HLJS_GITHUB_DARK}" media="(prefers-color-scheme: dark)" crossorigin="anonymous" />
+  <link rel="stylesheet" href="${MARKDOWN_CSS}" crossorigin="anonymous" />
+  <link rel="stylesheet" href="${HLJS_GITHUB}" crossorigin="anonymous" />
   <style>
-    body { margin: 0; }
+    html { color-scheme: light; }
+    body { margin: 0; background: #ffffff; color: #1f2328; }
     .markdown-body { box-sizing: border-box; min-width: 200px; max-width: 980px; margin: 0 auto; padding: 32px 24px 64px; }
     @media (max-width: 767px) { .markdown-body { padding: 16px; } }
     .markdown-body pre code { white-space: pre-wrap; word-break: break-word; }
@@ -193,9 +190,6 @@ function wrapPage({ title, bodyHtml }) {
       overflow: auto;
       border-radius: 6px;
       background: var(--color-canvas-subtle, #f6f8fa);
-    }
-    @media (prefers-color-scheme: dark) {
-      .markdown-body pre.mermaid { background: var(--color-canvas-subtle, #21262d); }
     }
     .markdown-alert {
       border-left: 0.25em solid;
@@ -215,13 +209,6 @@ function wrapPage({ title, bodyHtml }) {
     .markdown-alert-important { border-color: #8250df; background: rgba(130, 80, 223, 0.1); }
     .markdown-alert-warning { border-color: #9a6700; background: rgba(154, 103, 0, 0.12); }
     .markdown-alert-caution { border-color: #cf222e; background: rgba(207, 34, 46, 0.08); }
-    @media (prefers-color-scheme: dark) {
-      .markdown-alert-note { border-color: #4493f8; background: rgba(68, 147, 248, 0.12); }
-      .markdown-alert-tip { border-color: #3fb950; background: rgba(63, 185, 80, 0.12); }
-      .markdown-alert-important { border-color: #a371f7; background: rgba(163, 113, 247, 0.14); }
-      .markdown-alert-warning { border-color: #d4a72c; background: rgba(212, 167, 44, 0.12); }
-      .markdown-alert-caution { border-color: #ff7b72; background: rgba(255, 123, 114, 0.12); }
-    }
   </style>
 </head>
 <body>
@@ -230,10 +217,9 @@ ${bodyHtml}
   </article>
   <script type="module">
     import mermaid from "${MERMAID_ESM}";
-    const dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     mermaid.initialize({
       startOnLoad: false,
-      theme: dark ? "dark" : "default",
+      theme: "default",
       securityLevel: "strict",
       fontFamily: "ui-sans-serif, system-ui, sans-serif",
     });
