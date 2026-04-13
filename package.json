@@ -6,6 +6,8 @@
     "build:site": "node scripts/build-site.mjs"
   },
   "devDependencies": {
-    "marked": "^15.0.7"
+    "highlight.js": "^11.11.1",
+    "marked": "^15.0.7",
+    "marked-highlight": "^2.2.4"
   }
 }

@@ -1,14 +1,20 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import hljs from "highlight.js";
 import { marked } from "marked";
+import { markedHighlight } from "marked-highlight";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
 const outDir = path.join(root, "site");
 
-const MARKDOWN_CSS =
-  "https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.1/github-markdown.min.css";
+const CDN = "https://cdnjs.cloudflare.com/ajax/libs";
+const MARKDOWN_LIGHT = `${CDN}/github-markdown-css/5.5.1/github-markdown.min.css`;
+const MARKDOWN_DARK = `${CDN}/github-markdown-css/5.5.1/github-markdown-dark.min.css`;
+const HLJS_VER = "11.11.1";
+const HLJS_GITHUB_LIGHT = `${CDN}/highlight.js/${HLJS_VER}/styles/github.min.css`;
+const HLJS_GITHUB_DARK = `${CDN}/highlight.js/${HLJS_VER}/styles/github-dark.min.css`;
 
 const SKIP_DIR = new Set([
   "node_modules",
@@ -22,6 +28,24 @@ marked.use({
   mangle: false,
   headerIds: true,
 });
+
+marked.use(
+  markedHighlight({
+    emptyLangClass: "hljs",
+    langPrefix: "hljs language-",
+    highlight(code, lang) {
+      const trimmed = (lang || "").trim().toLowerCase();
+      if (trimmed && hljs.getLanguage(trimmed)) {
+        return hljs.highlight(code, { language: trimmed }).value;
+      }
+      if (trimmed) {
+        const auto = hljs.highlightAuto(code);
+        return auto.value;
+      }
+      return hljs.highlight(code, { language: "plaintext" }).value;
+    },
+  })
+);
 
 function walkMarkdownFiles(dir) {
   const out = [];
@@ -58,13 +82,19 @@ function wrapPage({ title, bodyHtml }) {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
   <title>${escapeHtml(title)}</title>
-  <link rel="stylesheet" href="${MARKDOWN_CSS}" crossorigin="anonymous" />
+  <link rel="stylesheet" href="${MARKDOWN_LIGHT}" media="(prefers-color-scheme: light)" crossorigin="anonymous" />
+  <link rel="stylesheet" href="${MARKDOWN_DARK}" media="(prefers-color-scheme: dark)" crossorigin="anonymous" />
+  <link rel="stylesheet" href="${HLJS_GITHUB_LIGHT}" media="(prefers-color-scheme: light)" crossorigin="anonymous" />
+  <link rel="stylesheet" href="${HLJS_GITHUB_DARK}" media="(prefers-color-scheme: dark)" crossorigin="anonymous" />
   <style>
     body { margin: 0; }
     .markdown-body { box-sizing: border-box; min-width: 200px; max-width: 980px; margin: 0 auto; padding: 32px 24px 64px; }
     @media (max-width: 767px) { .markdown-body { padding: 16px; } }
     .markdown-body pre code { white-space: pre-wrap; word-break: break-word; }
+    .markdown-body pre:has(> code.hljs) { padding: 16px; overflow: auto; border-radius: 6px; }
+    .markdown-body pre > code.hljs { padding: 0; background: transparent !important; }
   </style>
 </head>
 <body>
