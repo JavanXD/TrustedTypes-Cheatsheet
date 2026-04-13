@@ -1,6 +1,6 @@
 # Trusted Types — Playground
 
-Local **DOM XSS** vs **Trusted Types** demos that match the main cheatsheet (**`README.md`** sections **A.2**, **A.3**, **B**, **D.1**, **E.1**, **E.3**, **G**). There are no third-party sanitizers. The default **split view** is the **A.3** flow (**Perfect Types** and **`Element.setHTML()`**). The **A.2** named-policy lab is **`policy-lab.html`**. Panel headings in the iframe demos use the same letter–number labels as the cheatsheet (for example **E.1** for **`setHTML()`**, **E.3** for policy + **`innerHTML`**, **D.1** for plain **`innerHTML`**, **TrustedScript** for **`eval`**).
+Local **DOM XSS** vs **Trusted Types** demos that match the main cheatsheet (**`README.md`** sections **A.2**, **A.3**, **B**, **D.1**, **E.1**, **E.3**, **G**). The default **split view** is the **A.3** flow (**Perfect Types** and **`Element.setHTML()`**). The **A.2** named-policy lab is **`policy-lab.html`**. Panel headings in the iframe demos use the same letter–number labels as the cheatsheet (for example **E.1** for **`setHTML()`**, **E.3** for policy + **`innerHTML`**, **D.1** for plain **`innerHTML`**, **TrustedScript** for **`eval`**).
 
 GitHub Pages (and the static cheatsheet site) **do not ship** these **`.html`** files. You need **`serve.mjs`**, which sets real **`Content-Security-Policy`** response headers — run from a **local clone** or open files via **GitHub** in the browser.
 
@@ -18,7 +18,7 @@ Clone or download the repo so the full **`playground/`** directory exists on dis
 node playground/serve.mjs
 ```
 
-Open **http://127.0.0.1:5190/**. For **`frames/enforced-sanitizer.html`** and **`setHTML()`**, use a browser with the **HTML Sanitizer API** (Chromium is the usual choice).
+Open **http://127.0.0.1:5190/**. For **`frames/enforced-sanitizer.html`** and **`setHTML()`**, use a current **Chromium-, Firefox-, or Safari-based** browser — the **HTML Sanitizer API** is **Baseline** and ships in all major engines now (see [MDN — HTML Sanitizer API](https://developer.mozilla.org/en-US/docs/Web/API/HTML_Sanitizer_API#browser_compatibility)).
 
 ## Screenshot
 
