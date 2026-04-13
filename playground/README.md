@@ -1,57 +1,60 @@
-# Trusted Types - Playground
+# Trusted Types — Playground
 
-Local **DOM XSS** vs **Trusted Types** demos aligned with the main cheatsheet (**`README.md` § A.2**, **§ A.3**, **§ B**, **§ E.1**): no third-party sanitizers — the **split view** leads with **§ A.3** (**Perfect Types** + **`Element.setHTML()`**); **§ A.2** named policy is one click away in **`policy-lab.html`**.
+Local **DOM XSS** vs **Trusted Types** demos that match the main cheatsheet (**`README.md`** sections **A.2**, **A.3**, **B**, **E.1**). There are no third-party sanitizers. The default **split view** is the **A.3** flow (**Perfect Types** and **`Element.setHTML()`**). The **A.2** named-policy lab is **`policy-lab.html`**.
 
-The **static cheatsheet** (GitHub Pages / custom domain) **does not publish** playground **`.html`** (or related assets): **`serve.mjs`** must send real **`Content-Security-Policy`** headers, so demos only work from a **local clone** or by opening files from **GitHub**.
+GitHub Pages (and the static cheatsheet site) **do not ship** these **`.html`** files. You need **`serve.mjs`**, which sets real **`Content-Security-Policy`** response headers — run from a **local clone** or open files via **GitHub** in the browser.
 
-## Source & download
+## Get the files
 
-You need the **full `playground/` tree** on disk to run **`serve.mjs`** and the demos.
+Clone or download the repo so the full **`playground/`** directory exists on disk.
 
-- **[TrustedTypes-Cheatsheet on GitHub](https://github.com/JavanXD/TrustedTypes-Cheatsheet)** — clone, or use **Code → Download ZIP**.
-- **[`playground/` folder (`main`)](https://github.com/JavanXD/TrustedTypes-Cheatsheet/tree/main/playground)** — browse the HTML, CSS, and **`serve.mjs`** in the repo.
-- **[ZIP of `main` branch](https://github.com/JavanXD/TrustedTypes-Cheatsheet/archive/refs/heads/main.zip)** — after unpacking, `cd` into **`TrustedTypes-Cheatsheet-main/playground`** (folder name may include a `-main` suffix) and run the commands below.
+- **[TrustedTypes-Cheatsheet on GitHub](https://github.com/JavanXD/TrustedTypes-Cheatsheet)** — clone, or **Code → Download ZIP**
+- **[`playground/` on `main`](https://github.com/JavanXD/TrustedTypes-Cheatsheet/tree/main/playground)** — browse HTML, CSS, **`serve.mjs`**
+- **[ZIP of `main`](https://github.com/JavanXD/TrustedTypes-Cheatsheet/archive/refs/heads/main.zip)** — unpack, then `cd` into **`TrustedTypes-Cheatsheet-main/playground`** (name may end in `-main`)
 
-## Run it (use HTTP, not `file://`)
+## Run (HTTP only — not `file://`)
 
 ```bash
 node playground/serve.mjs
 ```
 
-Open **http://127.0.0.1:5190/** in a current browser. For **`frames/enforced-sanitizer.html`** / **`setHTML()`**, use a build with the **HTML Sanitizer API** (Chromium-style browsers are the usual choice).
+Open **http://127.0.0.1:5190/**. For **`frames/enforced-sanitizer.html`** and **`setHTML()`**, use a browser with the **HTML Sanitizer API** (Chromium is the usual choice).
 
 ## Screenshot
 
-**`index.html`** (split view: **§ A.3** **`frames/enforced-sanitizer.html`** vs **no CSP** **`frames/vulnerable.html`**) after starting the server on the default port:
+**`index.html`** after starting the server — split view: enforced sanitizer (`frames/enforced-sanitizer.html`) vs no CSP (`frames/vulnerable.html`):
 
 ![Trusted Types playground index — header, DevTools hint, and two iframe columns](playground-index.png)
 
-**Developer Tools:** Open the **Console** (e.g. **F12** or **Ctrl+Shift+I** / **Cmd+Option+I**). On-page `log()` lines mirror as `console.log` with a **`[…]`** filename prefix. On **enforced** pages (`frames/enforced.html`, `frames/enforced-sanitizer.html`), expected sink **`TypeError`**s use **`console.debug`** (in Chromium, enable **Verbose** to see them next to § G **`console.log`** lines).
+### Console and CSP reporting
 
-**Reporting / CSP (cheatsheet § G):** **`violation-observe.js`** is loaded only by **`frames/enforced.html`** and **`frames/enforced-sanitizer.html`** (the only HTML responses that include a **`Content-Security-Policy`** with Trusted Types from **`serve.mjs`**). **`createPlaygroundViolationAwareLog(scope)`** attaches **`ReportingObserver`** + **`securitypolicyviolation`** on the first **`log()`** call (plus the one-line “observers installed” message). **`frames/vulnerable.html`** does **not** load it: **`serve.mjs`** sends **no** CSP header for that file, so there is no **`require-trusted-types-for`** enforcement to report — it uses a plain **`log()`** only. On enforced pages, expected **`TypeError`**s from **`innerHTML`** / **`eval`** go to **`console.debug`** only; the on-page log is meant to show policy hooks + § G lines. Before those sinks, **`setPlaygroundSinkContext(...)`** adds **`sink: …`** (element + parent) when the browser emits a violation line; **`securitypolicyviolation`** may also include **`sourceFile`** / **`line`** / **`document`** / **`event.target`** when exposed (varies by browser).
+Open **Developer Tools → Console** (**F12**, or **Ctrl+Shift+I** / **Cmd+Option+I**). On-page **`log()`** output is mirrored to the console with a **`[…]`** filename prefix.
 
-### What actually enforces Trusted Types here
+**Enforced frames** (`frames/enforced.html`, `frames/enforced-sanitizer.html`): expected sink **`TypeError`**s are logged with **`console.debug`** (in Chromium, set the console to **Verbose** to see them next to reporting lines from the cheatsheet **G** section).
 
-For a frontend developer, the important detail is **which document** is governed by CSP:
+**`violation-observe.js`** runs only on those enforced pages (the only documents that get a TT **`Content-Security-Policy`** from **`serve.mjs`**). On first **`log()`**, it wires **`ReportingObserver`** and **`securitypolicyviolation`**. **`frames/vulnerable.html`** has no CSP from the server, so it uses a plain **`log()`** only — nothing to report for **`require-trusted-types-for`**. The on-page log is for policy hooks and reporting; **`setPlaygroundSinkContext(...)`** can add **`sink: …`** when the browser emits a violation. Event details (**`sourceFile`**, **`line`**, **`document`**, **`event.target`**) vary by browser.
 
-- **`serve.mjs`** adds a real **`Content-Security-Policy` HTTP response header** (not a `<meta http-equiv>` tag) only for **`frames/enforced.html`** and **`frames/enforced-sanitizer.html`**. Open **Network** → click the **document** request for that URL → **Headers** → **Response headers** and compare `Content-Security-Policy` to the strings in **`serve.mjs`** (`CSP_STRICT` vs `CSP_PERFECT_TYPES`).
-- **`frames/vulnerable.html`**, **`index.html`**, and **`policy-lab.html`** are served **without** that header on purpose, so the “unsafe” side stays unsafe.
-- **Trusted Types apply per browsing context (document).** The split view loads two separate iframes; enforcement in the left iframe does not change the right iframe’s document.
+### Which document is enforced?
 
-## What’s inside
+Trusted Types apply **per document** (browsing context).
 
-| File | Purpose |
-|------|---------|
-| **`index.html`** | Two iframes: **§ A.3** (`frames/enforced-sanitizer.html` — **`setHTML()`** + blocked **`innerHTML`** / **`eval`**) vs **`frames/vulnerable.html`** (unrestricted same sinks) |
-| **`frames/enforced.html`** | **§ A.2** CSP + **`myPolicy`**: **`setHTML()`** works on the same page while **`createHTML`** / **`createScript`** reject legacy **`innerHTML`** / **`eval`** strings (lab returns **`null`**) |
-| **`frames/enforced-sanitizer.html`** | **§ A.3** Perfect Types: `trusted-types 'none'` — **`setHTML()`** for safe insert; **`innerHTML`** / **`eval`** blocked; **`createPolicy`** fails by design |
-| **`frames/vulnerable.html`** | No TT CSP — payloads run after **Run** (demo **`alert`**) |
+- **`serve.mjs`** sends a real **`Content-Security-Policy`** header (not `<meta http-equiv>`) only for **`frames/enforced.html`** and **`frames/enforced-sanitizer.html`**. In **Network**, open the document response → **Headers** and compare to **`CSP_STRICT`** / **`CSP_PERFECT_TYPES`** in **`serve.mjs`**.
+- **`frames/vulnerable.html`**, **`index.html`**, and **`policy-lab.html`** are intentionally served **without** that header so the unsafe side stays unsafe.
+- The split view uses **two iframes**; TT in one iframe does not affect the other.
+
+## Files
+
+| Path | Role |
+|------|------|
+| **`index.html`** | Split view: **`frames/enforced-sanitizer.html`** vs **`frames/vulnerable.html`** |
 | **`policy-lab.html`** | Links **A.2** vs **A.3** demos |
-| **`index.css`**, **`policy-lab.css`** | Stylesheets for **`index.html`** / **`policy-lab.html`** at playground root |
-| **`frames/enforced.css`**, **`frames/enforced-sanitizer.css`**, **`frames/vulnerable.css`** | Styles next to their **`frames/*.html`** demos; **`frames/*.html`** still load **`../violation-observe.js`** where used |
-| **`violation-observe.js`** | **§ G** — used by **`frames/enforced*.html`** only; **`frames/vulnerable.html`** uses a plain inline **`log()`** (no TT violations to observe) |
-| **`serve.mjs`** | Injects real **`Content-Security-Policy`** headers on **`frames/enforced.html`** and **`frames/enforced-sanitizer.html`**; serves **`.css`** with **`text/css`** |
+| **`frames/enforced-sanitizer.html`** | **A.3** Perfect Types (`trusted-types 'none'`): safe insert via **`setHTML()`**; **`innerHTML`** / **`eval`** blocked; **`createPolicy`** fails by design |
+| **`frames/enforced.html`** | **A.2** CSP + **`myPolicy`**: **`setHTML()`** allowed; **`createHTML`** / **`createScript`** reject legacy string sinks (lab returns **`null`**) |
+| **`frames/vulnerable.html`** | No TT CSP — demo payloads run after **Run** (**`alert`**) |
+| **`violation-observe.js`** | Reporting helpers (**cheatsheet G**); only loaded by enforced **`frames/*.html`** |
+| **`serve.mjs`** | Local static server; CSP headers on enforced HTML only; **`.css`** as **`text/css`** |
+| **`index.css`**, **`policy-lab.css`**, **`frames/*.css`** | Styles for the pages above |
 
-**CSP note:** `script-src 'unsafe-inline'` is only so demo scripts work locally; `style-src 'self' 'unsafe-inline'` allows those **`.css`** files under `default-src 'none'` — **do not** copy blindly to production.
+**CSP note:** `script-src 'unsafe-inline'` is for local demos only; `style-src 'self' 'unsafe-inline'` loads **`.css`** under `default-src 'none'`. **Do not** copy this CSP to production as-is.
 
-**Warning:** **`frames/vulnerable.html`** is intentionally XSS-capable. Do not expose this directory on the public internet.
+**Warning:** **`frames/vulnerable.html`** is intentionally XSS-capable. Do not serve this folder on the public internet.

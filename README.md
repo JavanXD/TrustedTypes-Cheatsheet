@@ -7,7 +7,7 @@
 ---
 
 > [!IMPORTANT]
-> **In plain terms:** Things like **`innerHTML`**, **`eval`**, and **`script.src`** are dangerous: they take **plain text** that can turn into running code if an attacker controls that text.
+> Things like **`innerHTML`**, **`eval`**, and **`script.src`** are dangerous: they take **plain text** that can turn into running code if an attacker controls that text.
 >
 > **Trusted Types** (via CSP: **`require-trusted-types-for 'script'`** + **`trusted-types`**) tells the browser: for those APIs, only accept **wrapped values** (**`TrustedHTML`**, **`TrustedScript`**, **`TrustedScriptURL`**) from **`trustedTypes.createPolicy(...)`**—or, in some cases, a string that goes through a **`default`** policy you registered. **You** put sanitization inside the policy; **CSP** lists which policy names are allowed, instead of every file doing its own thing.
 >
@@ -121,7 +121,7 @@ A **policy** is a small object you create once. Its methods (like **`createHTML`
 
 Browsers group dangerous APIs into a few kinds. Each kind has a matching **trusted type**. A **sink** is one of those APIs: without Trusted Types, a **string** you pass in might be unsafe.
 
-| Type | Typical sinks (examples) | In plain terms |
+| Type | Typical sinks (examples) | Meaning |
 |------|---------------------------|----------------|
 | **`TrustedHTML`** | `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `document.write`, `document.writeln`, `DOMParser.parseFromString`, iframe `srcdoc`, … | The browser treats the value as **HTML** to parse or insert. |
 | **`TrustedScript`** | `eval`, inline **`<script>`** text, `new Function`, `setTimeout` / `setInterval` with a **string** body, … | The browser treats the value as **JavaScript** to run. |

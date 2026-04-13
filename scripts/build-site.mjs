@@ -91,10 +91,16 @@ function walkMarkdownFiles(dir) {
   return out;
 }
 
+/** Repo-relative markdown path → path under site/ (README.md → index.html). */
+function mdRelToSiteHtmlRel(mdRel) {
+  const rel = mdRel.replace(/\\/g, "/");
+  if (rel === "README.md") return "index.html";
+  return rel.replace(/\.md$/i, ".html");
+}
+
 function outputHtmlPath(mdAbs) {
   const rel = path.relative(root, mdAbs);
-  if (rel === "README.md") return path.join(outDir, "index.html");
-  return path.join(outDir, rel.replace(/\.md$/i, ".html"));
+  return path.join(outDir, mdRelToSiteHtmlRel(rel));
 }
 
 function titleFromMarkdown(src, fallback) {
@@ -102,10 +108,20 @@ function titleFromMarkdown(src, fallback) {
   return m ? m[1].trim() : fallback;
 }
 
-function rewriteLocalMdLinks(html) {
-  return html.replace(/href="([^"]+)\.md(#[^"]*)?"/gi, (match, p1, hash = "") => {
+function rewriteLocalMdLinks(html, sourceMdRel) {
+  const src = sourceMdRel.replace(/\\/g, "/");
+  const mdDir = path.posix.dirname(src);
+  const fromHtmlRel = mdRelToSiteHtmlRel(src);
+  const fromDir = path.posix.dirname(fromHtmlRel);
+
+  return html.replace(/href="([^"]+)\.md(#[^"]*)?"/gi, (match, p1, hash) => {
+    const frag = hash ?? "";
     if (/^(https?:)?\/\//i.test(p1) || p1.startsWith("mailto:")) return match;
-    return `href="${p1}.html${hash}"`;
+
+    const targetMd = path.posix.normalize(`${mdDir}/${p1}.md`);
+    const targetHtmlRel = mdRelToSiteHtmlRel(targetMd);
+    const href = path.posix.relative(fromDir, targetHtmlRel);
+    return `href="${href}${frag}"`;
   });
 }
 
@@ -201,6 +217,7 @@ ${githubMdLightOverride}
       }
     }
     .markdown-body { box-sizing: border-box; min-width: 200px; max-width: 980px; margin: 0 auto; padding: 32px 24px 64px; }
+    .markdown-body > h1:first-of-type { text-align: center; }
     @media (max-width: 767px) { .markdown-body { padding: 16px; } }
     .markdown-body pre code { white-space: pre-wrap; word-break: break-word; }
     .markdown-body pre:has(> code.hljs) { padding: 16px; overflow: auto; border-radius: 6px; }
@@ -212,24 +229,28 @@ ${githubMdLightOverride}
       border-radius: 6px;
       background: var(--color-canvas-subtle, #f6f8fa);
     }
-    .markdown-alert {
+    /* github-markdown-css uses .markdown-body .markdown-alert — match specificity so these win (later in doc). */
+    .markdown-body .markdown-alert {
+      box-sizing: border-box;
       border-left: 0.25em solid;
-      padding: 0.75em 1em;
+      padding-block: 0.75em;
+      padding-inline-end: 1em;
+      padding-inline-start: 1.75em;
       margin: 0 0 16px;
       border-radius: 6px;
     }
-    .markdown-alert-title {
+    .markdown-body .markdown-alert-title {
       font-weight: 600;
       margin: 0 0 0.5em;
       line-height: 1.25;
     }
-    .markdown-alert-body > :first-child { margin-top: 0; }
-    .markdown-alert-body > :last-child { margin-bottom: 0; }
-    .markdown-alert-note { border-color: #0969da; background: rgba(9, 105, 218, 0.08); }
-    .markdown-alert-tip { border-color: #1a7f37; background: rgba(26, 127, 55, 0.1); }
-    .markdown-alert-important { border-color: #8250df; background: rgba(130, 80, 223, 0.1); }
-    .markdown-alert-warning { border-color: #9a6700; background: rgba(154, 103, 0, 0.12); }
-    .markdown-alert-caution { border-color: #cf222e; background: rgba(207, 34, 46, 0.08); }
+    .markdown-body .markdown-alert-body > :first-child { margin-top: 0; }
+    .markdown-body .markdown-alert-body > :last-child { margin-bottom: 0; }
+    .markdown-body .markdown-alert.markdown-alert-note { border-color: #0969da; background: rgba(9, 105, 218, 0.08); }
+    .markdown-body .markdown-alert.markdown-alert-tip { border-color: #1a7f37; background: rgba(26, 127, 55, 0.1); }
+    .markdown-body .markdown-alert.markdown-alert-important { border-color: #8250df; background: rgba(130, 80, 223, 0.1); }
+    .markdown-body .markdown-alert.markdown-alert-warning { border-color: #9a6700; background: rgba(154, 103, 0, 0.12); }
+    .markdown-body .markdown-alert.markdown-alert-caution { border-color: #cf222e; background: rgba(207, 34, 46, 0.08); }
   </style>
 </head>
 <body>
@@ -275,7 +296,7 @@ function main() {
     const title = titleFromMarkdown(raw, fallbackTitle);
     const prepped = transformGithubAlerts(raw);
     let bodyHtml = marked.parse(prepped);
-    bodyHtml = rewriteLocalMdLinks(bodyHtml);
+    bodyHtml = rewriteLocalMdLinks(bodyHtml, rel);
 
     const outHtml = outputHtmlPath(mdAbs);
     ensureDir(path.dirname(outHtml));
