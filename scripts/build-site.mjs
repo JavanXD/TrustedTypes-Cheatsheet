@@ -9,6 +9,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
 const outDir = path.join(root, "site");
 
+const githubMdLightOverride = fs.readFileSync(
+  path.join(__dirname, "github-markdown-light-override.inc.css"),
+  "utf8"
+);
+
 const CDN = "https://cdnjs.cloudflare.com/ajax/libs";
 const MARKDOWN_CSS = `${CDN}/github-markdown-css/5.5.1/github-markdown.min.css`;
 const HLJS_VER = "11.11.1";
@@ -182,7 +187,19 @@ function wrapPage({ title, bodyHtml }) {
   <link rel="stylesheet" href="${HLJS_GITHUB}" crossorigin="anonymous" />
   <style>
     html { color-scheme: light; }
-    body { margin: 0; background: #ffffff; color: #1f2328; }
+    html,
+    body {
+      background-color: #ffffff !important;
+      color: #1f2328;
+    }
+    body {
+      margin: 0;
+    }
+    @media (prefers-color-scheme: dark) {
+      .markdown-body {
+${githubMdLightOverride}
+      }
+    }
     .markdown-body { box-sizing: border-box; min-width: 200px; max-width: 980px; margin: 0 auto; padding: 32px 24px 64px; }
     @media (max-width: 767px) { .markdown-body { padding: 16px; } }
     .markdown-body pre code { white-space: pre-wrap; word-break: break-word; }
