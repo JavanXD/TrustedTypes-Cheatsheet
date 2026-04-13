@@ -15,6 +15,7 @@ const MARKDOWN_DARK = `${CDN}/github-markdown-css/5.5.1/github-markdown-dark.min
 const HLJS_VER = "11.11.1";
 const HLJS_GITHUB_LIGHT = `${CDN}/highlight.js/${HLJS_VER}/styles/github.min.css`;
 const HLJS_GITHUB_DARK = `${CDN}/highlight.js/${HLJS_VER}/styles/github-dark.min.css`;
+const MERMAID_ESM = "https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs";
 
 const SKIP_DIR = new Set([
   "node_modules",
@@ -22,6 +23,16 @@ const SKIP_DIR = new Set([
   "site",
   ".github",
 ]);
+
+const ALERT_KINDS = new Set(["note", "tip", "important", "warning", "caution"]);
+
+const ALERT_TITLES = {
+  note: "Note",
+  tip: "Tip",
+  important: "Important",
+  warning: "Warning",
+  caution: "Caution",
+};
 
 marked.use({
   gfm: true,
@@ -35,17 +46,32 @@ marked.use(
     langPrefix: "hljs language-",
     highlight(code, lang) {
       const trimmed = (lang || "").trim().toLowerCase();
+      if (trimmed === "mermaid") {
+        return code;
+      }
       if (trimmed && hljs.getLanguage(trimmed)) {
         return hljs.highlight(code, { language: trimmed }).value;
       }
       if (trimmed) {
-        const auto = hljs.highlightAuto(code);
-        return auto.value;
+        return hljs.highlightAuto(code).value;
       }
       return hljs.highlight(code, { language: "plaintext" }).value;
     },
   })
 );
+
+marked.use({
+  renderer: {
+    code(token) {
+      const lang = (token.lang || "").match(/\S*/)?.[0]?.toLowerCase();
+      if (lang === "mermaid") {
+        const code = token.text.replace(/\n$/, "");
+        return `<pre class="mermaid">${escapeHtml(code)}</pre>\n`;
+      }
+      return false;
+    },
+  },
+});
 
 function walkMarkdownFiles(dir) {
   const out = [];
@@ -76,6 +102,72 @@ function rewriteLocalMdLinks(html) {
   });
 }
 
+function fenceDelimiter(line) {
+  const m = line.match(/^(\s*)(`{3,}|~{3,})/);
+  return m ? m[2] : null;
+}
+
+function isFenceCloseLine(line, delim) {
+  return line.trim() === delim;
+}
+
+function transformGithubAlerts(src) {
+  const lines = src.split("\n");
+  const out = [];
+  let i = 0;
+  let fenceDelim = null;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    if (fenceDelim) {
+      out.push(line);
+      if (isFenceCloseLine(line, fenceDelim)) fenceDelim = null;
+      i++;
+      continue;
+    }
+
+    const delim = fenceDelimiter(line);
+    if (delim) {
+      fenceDelim = delim;
+      out.push(line);
+      i++;
+      continue;
+    }
+
+    const alertMatch = line.match(/^>\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*$/i);
+    if (alertMatch) {
+      const kind = alertMatch[1].toLowerCase();
+      if (!ALERT_KINDS.has(kind)) {
+        out.push(line);
+        i++;
+        continue;
+      }
+      i++;
+      const bodyLines = [];
+      while (i < lines.length && /^>\s?/.test(lines[i])) {
+        bodyLines.push(lines[i].replace(/^>\s?/, ""));
+        i++;
+      }
+      const innerMd = bodyLines.join("\n");
+      const innerHtml = marked.parse(transformGithubAlerts(innerMd));
+      const title = ALERT_TITLES[kind] || kind;
+      out.push(
+        `<div class="markdown-alert markdown-alert-${kind}" role="note">\n` +
+          `<p class="markdown-alert-title">${escapeHtml(title)}</p>\n` +
+          `<div class="markdown-alert-body">\n${innerHtml}</div>\n` +
+          `</div>`
+      );
+      continue;
+    }
+
+    out.push(line);
+    i++;
+  }
+
+  return out.join("\n");
+}
+
 function wrapPage({ title, bodyHtml }) {
   return `<!DOCTYPE html>
 <html lang="en">
@@ -95,12 +187,58 @@ function wrapPage({ title, bodyHtml }) {
     .markdown-body pre code { white-space: pre-wrap; word-break: break-word; }
     .markdown-body pre:has(> code.hljs) { padding: 16px; overflow: auto; border-radius: 6px; }
     .markdown-body pre > code.hljs { padding: 0; background: transparent !important; }
+    .markdown-body pre.mermaid {
+      margin: 16px 0;
+      padding: 12px 16px;
+      overflow: auto;
+      border-radius: 6px;
+      background: var(--color-canvas-subtle, #f6f8fa);
+    }
+    @media (prefers-color-scheme: dark) {
+      .markdown-body pre.mermaid { background: var(--color-canvas-subtle, #21262d); }
+    }
+    .markdown-alert {
+      border-left: 0.25em solid;
+      padding: 0.75em 1em;
+      margin: 0 0 16px;
+      border-radius: 6px;
+    }
+    .markdown-alert-title {
+      font-weight: 600;
+      margin: 0 0 0.5em;
+      line-height: 1.25;
+    }
+    .markdown-alert-body > :first-child { margin-top: 0; }
+    .markdown-alert-body > :last-child { margin-bottom: 0; }
+    .markdown-alert-note { border-color: #0969da; background: rgba(9, 105, 218, 0.08); }
+    .markdown-alert-tip { border-color: #1a7f37; background: rgba(26, 127, 55, 0.1); }
+    .markdown-alert-important { border-color: #8250df; background: rgba(130, 80, 223, 0.1); }
+    .markdown-alert-warning { border-color: #9a6700; background: rgba(154, 103, 0, 0.12); }
+    .markdown-alert-caution { border-color: #cf222e; background: rgba(207, 34, 46, 0.08); }
+    @media (prefers-color-scheme: dark) {
+      .markdown-alert-note { border-color: #4493f8; background: rgba(68, 147, 248, 0.12); }
+      .markdown-alert-tip { border-color: #3fb950; background: rgba(63, 185, 80, 0.12); }
+      .markdown-alert-important { border-color: #a371f7; background: rgba(163, 113, 247, 0.14); }
+      .markdown-alert-warning { border-color: #d4a72c; background: rgba(212, 167, 44, 0.12); }
+      .markdown-alert-caution { border-color: #ff7b72; background: rgba(255, 123, 114, 0.12); }
+    }
   </style>
 </head>
 <body>
   <article class="markdown-body">
 ${bodyHtml}
   </article>
+  <script type="module">
+    import mermaid from "${MERMAID_ESM}";
+    const dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: dark ? "dark" : "default",
+      securityLevel: "strict",
+      fontFamily: "ui-sans-serif, system-ui, sans-serif",
+    });
+    await mermaid.run({ querySelector: ".markdown-body pre.mermaid" });
+  </script>
 </body>
 </html>
 `;
@@ -133,7 +271,8 @@ function main() {
     const rel = path.relative(root, mdAbs);
     const fallbackTitle = rel.replace(/\.md$/i, "");
     const title = titleFromMarkdown(raw, fallbackTitle);
-    let bodyHtml = marked.parse(raw);
+    const prepped = transformGithubAlerts(raw);
+    let bodyHtml = marked.parse(prepped);
     bodyHtml = rewriteLocalMdLinks(bodyHtml);
 
     const outHtml = outputHtmlPath(mdAbs);
