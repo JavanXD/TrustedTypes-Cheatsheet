@@ -23,6 +23,9 @@ const MERMAID_ESM = "https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.es
 /** Base URL for canonical, Open Graph, and sitemap (no trailing slash). Override with SITE_URL. */
 const DEFAULT_SITE_URL = "https://tt-cheatsheet.javan.de";
 
+/** Footer “author / project” link on every HTML page. Override with FOOTER_SITE_URL. */
+const DEFAULT_FOOTER_SITE_URL = "https://about.javan.de/";
+
 const SKIP_DIR = new Set([
   "node_modules",
   ".git",
@@ -390,6 +393,7 @@ function wrapPage({
   siteBase,
   siteName,
   llmsTxtUrl,
+  footerSiteUrl,
   robots,
   bodyHtml,
 }) {
@@ -469,8 +473,8 @@ function wrapPage({
 ${githubMdLightOverride}
       }
     }
-    .markdown-body { box-sizing: border-box; min-width: 200px; padding: 32px 24px 64px; }
-    main.page-shell { box-sizing: border-box; margin: 0 auto; padding: 0 24px 48px; }
+    .markdown-body { box-sizing: border-box; min-width: 200px; padding: 32px 20px 64px; }
+    main.page-shell { box-sizing: border-box; margin: 0 auto; padding: 0 16px 48px; }
     main.page-shell:not(.has-toc) { max-width: 980px; }
     main.page-shell:not(.has-toc) .markdown-body { max-width: none; margin: 0; }
     main.page-shell.has-toc {
@@ -570,7 +574,17 @@ ${githubMdLightOverride}
       }
     }
     .markdown-body > h1:first-of-type { text-align: center; }
-    @media (max-width: 767px) { .markdown-body { padding: 16px; } }
+    @media (max-width: 767px) {
+      main.page-shell {
+        padding: 0 8px 36px;
+      }
+      .markdown-body {
+        padding: 16px 8px 40px;
+      }
+      main.page-shell.has-toc .markdown-body {
+        padding: 16px 8px 40px;
+      }
+    }
     .markdown-body pre code { white-space: pre-wrap; word-break: break-word; }
     .markdown-body pre:has(> code.hljs) { padding: 16px; overflow: auto; border-radius: 6px; }
     .markdown-body pre > code.hljs { padding: 0; background: transparent !important; }
@@ -585,9 +599,9 @@ ${githubMdLightOverride}
     .markdown-body .markdown-alert {
       box-sizing: border-box;
       border-left: 0.25em solid;
-      padding-block: 0.75em;
-      padding-inline-end: 1em;
-      padding-inline-start: 1.75em;
+      padding-block: 0.6em;
+      padding-inline-end: 0.85em;
+      padding-inline-start: 1.35em;
       margin: 0 0 16px;
       border-radius: 6px;
     }
@@ -603,6 +617,35 @@ ${githubMdLightOverride}
     .markdown-body .markdown-alert.markdown-alert-important { border-color: #8250df; background: rgba(130, 80, 223, 0.1); }
     .markdown-body .markdown-alert.markdown-alert-warning { border-color: #9a6700; background: rgba(154, 103, 0, 0.12); }
     .markdown-body .markdown-alert.markdown-alert-caution { border-color: #cf222e; background: rgba(207, 34, 46, 0.08); }
+    .site-footer {
+      box-sizing: border-box;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 1.5rem 1.5rem 2rem;
+      border-top: 1px solid var(--color-border-default, #d1d9e0);
+      text-align: center;
+      font-size: 0.875rem;
+      line-height: 1.5;
+      color: #59636e;
+    }
+    .site-footer a {
+      color: #0969da;
+      text-decoration: none;
+    }
+    .site-footer a:hover {
+      text-decoration: underline;
+      color: #0550ae;
+    }
+    @media (max-width: 767px) {
+      .site-footer {
+        padding: 1.75rem 0.75rem 2rem;
+      }
+      .markdown-body .markdown-alert {
+        padding-block: 0.5em;
+        padding-inline-end: 0.75em;
+        padding-inline-start: 1.05em;
+      }
+    }
   </style>
 </head>
 <body>
@@ -612,6 +655,9 @@ ${githubMdLightOverride}
 ${bodyHtml}
   </article>
   </main>
+  <footer class="site-footer" role="contentinfo">
+    <p><a href="${escapeHtml(footerSiteUrl)}" rel="noopener noreferrer">${escapeHtml(footerLinkLabel(footerSiteUrl))}</a></p>
+  </footer>
   <script>
   (function () {
     function initTocScrollSpy() {
@@ -772,6 +818,14 @@ function escapeHtml(s) {
     .replace(/"/g, "&quot;");
 }
 
+function footerLinkLabel(url) {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return "about.javan.de";
+  }
+}
+
 function ensureDir(p) {
   fs.mkdirSync(p, { recursive: true });
 }
@@ -784,6 +838,9 @@ function main() {
   const siteName =
     (process.env.SITE_NAME && process.env.SITE_NAME.trim()) ||
     "Trusted Types cheatsheet";
+  const footerSiteUrl =
+    (process.env.FOOTER_SITE_URL && process.env.FOOTER_SITE_URL.trim()) ||
+    DEFAULT_FOOTER_SITE_URL;
 
   const mdFiles = walkMarkdownFiles(root);
   const sitemapHtmlRels = [];
@@ -829,6 +886,7 @@ function main() {
         siteBase,
         siteName,
         llmsTxtUrl,
+        footerSiteUrl,
         robots: meta.robots || "",
         bodyHtml,
       }),

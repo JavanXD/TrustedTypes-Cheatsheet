@@ -110,7 +110,7 @@ Worked examples: [E.1 `setHTML()`](#e-1-sethtml) and [F.4 `Document.parseHTML()`
 > [!NOTE]
 > Many snippets call **`DOMPurify.sanitize(...)`** because upstream docs use it as a well-known stand-in for “**turn untrusted HTML into something safer before it hits a sink**.” **You do not have to use DOMPurify.**
 
-**Project:** [Trusted Types cheatsheet (GitHub)](https://github.com/JavanXD/TrustedTypes-Cheatsheet) · [Cheatsheet online](https://tt-cheatsheet.javan.de/)
+**Project:** [DOMPurify (GitHub)](https://github.com/cure53/DOMPurify)
 
 Inside **`createHTML`** (and friends), the body can be **any** approach you trust and can review, for example:
 
