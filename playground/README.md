@@ -18,7 +18,7 @@ Clone or download the repo so the full **`playground/`** directory exists on dis
 node playground/serve.mjs
 ```
 
-Open **http://127.0.0.1:5190/**. For **`frames/enforced-sanitizer.html`** and **`setHTML()`**, use a current **Chromium-, Firefox-, or Safari-based** browser — the **HTML Sanitizer API** is **Baseline** and ships in all major engines now (see [MDN — HTML Sanitizer API](https://developer.mozilla.org/en-US/docs/Web/API/HTML_Sanitizer_API#browser_compatibility)).
+Open **http://127.0.0.1:5190/**. For **`frames/enforced-sanitizer.html`** and **`setHTML()`**, use a current Chromium- or Firefox-based browser. **As of 2026-04-22**, MDN marks the **HTML Sanitizer API** as **Limited availability**: Safari is the remaining major-browser gap, so this API is not Baseline yet (see [MDN — HTML Sanitizer API](https://developer.mozilla.org/en-US/docs/Web/API/HTML_Sanitizer_API#browser_compatibility)).
 
 ## Screenshot
 

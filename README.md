@@ -93,7 +93,7 @@ Content-Security-Policy: require-trusted-types-for 'script'; trusted-types myPol
 ### A.3 “Perfect Types” — no policies; use the Sanitizer API instead
 
 > [!NOTE]
-> Here you **forbid** creating any Trusted Types policy (`trusted-types 'none'`). Legacy string APIs such as `innerHTML = "..."` cannot be used in the usual way. You insert HTML with **`setHTML()`** or parse with **`Document.parseHTML()`** instead. The **HTML Sanitizer API** behind those methods is **Baseline** in current Chromium, Firefox, Safari, and Edge.
+> Here you **forbid** creating any Trusted Types policy (`trusted-types 'none'`). Legacy string APIs such as `innerHTML = "..."` cannot be used in the usual way. You insert HTML with **`setHTML()`** or parse with **`Document.parseHTML()`** instead. **As of 2026-04-22**, MDN marks the HTML Sanitizer API as **Limited availability**: current Chromium and Firefox support it, while Safari is the remaining major-engine gap, so it is not Baseline yet.
 
 ```http
 Content-Security-Policy: require-trusted-types-for 'script'; trusted-types 'none'
@@ -309,7 +309,7 @@ flowchart TD
 
 ### E.1 `element.setHTML(...)` — browser-owned sanitizing
 
-Good when you have an HTML string from an untrusted source. The **HTML Sanitizer API** is **Baseline** in current Chromium, Firefox, Safari, and Edge — use a recent release:
+Good when you have an HTML string from an untrusted source. **As of 2026-04-22**, the **HTML Sanitizer API** is **Limited availability**: available in current Chromium and Firefox, with Safari still missing in stable releases, so it is not Baseline across all major engines yet. Use a recent release and feature-detect where needed:
 
 ```js
 const untrustedString = "abc <script>alert(1)</script> def";
