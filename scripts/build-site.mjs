@@ -445,9 +445,17 @@ function wrapPage({
   <meta property="og:description" content="${escapeHtml(desc)}" />
   <meta property="og:url" content="${escapeHtml(canonicalUrl)}" />
   <meta property="og:locale" content="en_US" />
-  <meta name="twitter:card" content="summary" />
+  <meta property="og:image" content="${escapeHtml(siteBase)}/og-image.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="${escapeHtml(title)}" />
   <meta name="twitter:description" content="${escapeHtml(desc)}" />
+  <meta name="twitter:image" content="${escapeHtml(siteBase)}/og-image.png" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="icon" type="image/png" href="/og-image.png" />
   <title>${escapeHtml(title)}</title>
   <script type="application/ld+json">${jsonLdArticle}</script>
   <script type="application/ld+json">${jsonLdWebsite}</script>
@@ -895,6 +903,14 @@ function main() {
   }
 
   fs.writeFileSync(path.join(outDir, ".nojekyll"), "", "utf8");
+
+  const assetsDir = path.join(root, "assets");
+  for (const name of ["favicon.ico", "og-image.png"]) {
+    const src = path.join(assetsDir, name);
+    if (fs.existsSync(src)) {
+      fs.copyFileSync(src, path.join(outDir, name));
+    }
+  }
 
   sitemapHtmlRels.push("llms.txt");
   const sitemapUrl = `${siteBase}/sitemap.xml`;
