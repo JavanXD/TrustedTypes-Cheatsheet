@@ -33,6 +33,9 @@ const SKIP_DIR = new Set([
   ".github",
 ]);
 
+/** Internal / non-product markdown — do not ship as public HTML or sitemap entries. */
+const SKIP_MD = new Set(["TODO.md", "CONTRIBUTING.md", "CHANGELOG.md", "LICENSE.md"]);
+
 const ALERT_KINDS = new Set(["note", "tip", "important", "warning", "caution"]);
 
 const ALERT_TITLES = {
@@ -92,7 +95,7 @@ function walkMarkdownFiles(dir) {
     }
     const full = path.join(dir, name.name);
     if (name.isDirectory()) out.push(...walkMarkdownFiles(full));
-    else if (name.name.endsWith(".md")) out.push(full);
+    else if (name.name.endsWith(".md") && !SKIP_MD.has(name.name)) out.push(full);
   }
   return out;
 }
@@ -455,7 +458,7 @@ function wrapPage({
   <meta name="twitter:image" content="${escapeHtml(siteBase)}/og-image.png" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <link rel="icon" href="/favicon.ico" sizes="any" />
-  <link rel="icon" type="image/png" href="/og-image.png" />
+  <link rel="icon" type="image/png" href="/favicon-192.png" sizes="192x192" />
   <title>${escapeHtml(title)}</title>
   <script type="application/ld+json">${jsonLdArticle}</script>
   <script type="application/ld+json">${jsonLdWebsite}</script>
@@ -905,7 +908,7 @@ function main() {
   fs.writeFileSync(path.join(outDir, ".nojekyll"), "", "utf8");
 
   const assetsDir = path.join(root, "assets");
-  for (const name of ["favicon.ico", "og-image.png"]) {
+  for (const name of ["favicon.ico", "favicon-192.png", "og-image.png"]) {
     const src = path.join(assetsDir, name);
     if (fs.existsSync(src)) {
       fs.copyFileSync(src, path.join(outDir, name));
