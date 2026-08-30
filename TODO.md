@@ -14,7 +14,7 @@
 - [x] Do not publish `TODO.md` (or other SKIP_MD files) as public HTML / sitemap / llms.txt entries
 - [x] PNG favicon: `/favicon-192.png` (stop using 1200×630 OG image as `rel="icon"`)
 - [x] Drop GitHub Pages `Access-Control-Allow-Origin: *` via edge Worker *(shared `javan-gh-pages-headers`)*
-- [ ] Optional: Content-Security-Policy (careful — site loads highlight.js / mermaid from CDN)
+- [x] Optional: Content-Security-Policy (careful — site loads highlight.js / mermaid from CDN) *(enforcing via `javan-gh-pages-headers`; cdnjs + jsdelivr + unsafe-inline for mermaid module + TOC — 2026-08-30)*
 - [ ] Optional: dedicated apple-touch-icon (192 PNG already covers most browsers)
 
 ## Needs your decision
