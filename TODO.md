@@ -3,7 +3,7 @@
 ## Current / next
 
 - **Now:** Hygiene follow-ups from 2026-08-30 live verify (exclude internal TODO from public site; PNG favicon; strip unused CORS at edge).
-- **Ops:** GitHub Pages via `.github/workflows/pages.yml` on `main`. Edge security headers via Cloudflare Worker `javan-gh-pages-headers` (source: `~/Projects/www.javan.de/workers/javan-gh-pages-headers`).
+- **Ops:** GitHub Pages via `.github/workflows/pages.yml` on `main`. Edge security headers via Cloudflare Worker `javan-gh-pages-headers` (source: `~/Projects/*.javan.de/javan.de/workers/javan-gh-pages-headers`).
 
 ## Web hygiene / security (2026-08-29 audit + 2026-08-30)
 
