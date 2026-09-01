@@ -3,7 +3,7 @@
 ## Current / next
 
 - **Now:** Hygiene follow-ups from 2026-08-30 live verify (exclude internal TODO from public site; PNG favicon; strip unused CORS at edge).
-- **Ops:** GitHub Pages via `.github/workflows/pages.yml` on `main`. Edge security headers via Cloudflare Worker `javan-gh-pages-headers` (source: `~/Projects/*.javan.de/javan.de/workers/javan-gh-pages-headers`).
+- **Ops:** GitHub Pages via `.github/workflows/pages.yml` on `main`. Edge security headers today via Worker `javan-gh-pages-headers`. **Blocked 2026-09-01:** general API token has no Zone Transform Rules write (403). Stay on the Worker until a token can write Transform / `_headers` after leaving GH Pages. Tracked: `~/Projects/*.javan.de/javan.de/TODO.md`.
 
 ## Web hygiene / security (2026-08-29 audit + 2026-08-30)
 
@@ -19,4 +19,5 @@
 
 ## Needs your decision
 
-- [ ] Keep edge Worker `javan-gh-pages-headers` as the long-term header source for this GH Pages host, or migrate the site to Cloudflare Pages/`_headers`?
+- [x] **`javan-gh-pages-headers` → `_headers` / Transform (quota-free).** Decided 2026-09-01: do not keep a header-only Worker on the shared Javan 100k pool. Implement: P1 in `~/Projects/*.javan.de/javan.de/TODO.md`.
+- [ ] **Migrate headers off `javan-gh-pages-headers`.** Per-host `_headers` (or zone Transform Rule); then detach this host from the shared Worker.
